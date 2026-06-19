@@ -69,7 +69,10 @@ function render(d){
           : "<p>-</p>"
       }
     </div>
-
+<div class="card">
+  <h3>📊 Trend težine</h3>
+  <canvas id="chart" height="120"></canvas>
+</div>
     <div class="card">
       <h3>🚿 Pranje</h3>
       ${
