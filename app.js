@@ -1,4 +1,3 @@
-
 const urlParams = new URLSearchParams(window.location.search);
 const PROSTOR_ID = urlParams.get("prostor");
 
@@ -17,22 +16,21 @@ function loadBox(){
     render(data);
   };
 
-  const script = document.createElement("script");
+  const s = document.createElement("script");
 
-  script.src =
+  s.src =
     CONFIG.API_URL +
     "?action=getBox&prostorId=" +
     PROSTOR_ID +
     "&callback=handleResponse";
 
-  document.body.appendChild(script);
+  document.body.appendChild(s);
 }
 
 function render(data){
 
   const p = data.prostor;
   const pas = data.pas;
-  const s = data.smestaj;
 
   let html = "";
 
@@ -44,7 +42,9 @@ function render(data){
 
     <div class="card">
       <h3>Pas</h3>
-      <p>${pas ? pas[2] : "Nema psa"}</p>
+      <p>${pas ? pas[2] : "-"}</p>
+      <p>Rodjen: ${pas ? pas[3] : "-"}</p>
+      <p>Rodovnik: ${pas ? pas[4] : "-"}</p>
     </div>
 
     <div class="card">
@@ -56,14 +56,15 @@ function render(data){
 
     <div class="card">
       <h3>Težina</h3>
-      <p>${data.lastTezina ? data.lastTezina[3] + " kg" : "nema"}</p>
-      <p>Hrana: ${data.lastTezina ? data.lastTezina[4] + " g" : "nema"}</p>
+      <p>${data.lastTezina ? data.lastTezina[3] + " kg" : "-"}</p>
+      <p>Hrana: ${data.lastTezina ? data.lastTezina[4] + " g" : "-"}</p>
     </div>
 
     <div class="card">
-      <h3>Unos</h3>
       <button onclick="openForm('tezina')">Težina</button>
-      <button onclick="openForm('pranje')">Pranje</button>
+      <button onclick="openForm('krpelji')">Krpelji</button>
+      <button onclick="openForm('paraziti')">Paraziti</button>
+      <button onclick="openForm('besnilo')">Besnilo</button>
     </div>
 
     <div id="formArea"></div>
@@ -74,29 +75,12 @@ function render(data){
 
 function openForm(type){
 
-  let html = "";
-
-  if(type === "tezina"){
-    html = `
-      <div class="card">
-        <h3>Težina</h3>
-        <input id="val" type="number">
-        <button onclick="save('tezina')">Sačuvaj</button>
-      </div>
-    `;
-  }
-
-  if(type === "pranje"){
-    html = `
-      <div class="card">
-        <h3>Pranje</h3>
-        <input id="val" type="text">
-        <button onclick="save('pranje')">Sačuvaj</button>
-      </div>
-    `;
-  }
-
-  document.getElementById("formArea").innerHTML = html;
+  document.getElementById("formArea").innerHTML = `
+    <div class="card">
+      <input id="val" placeholder="unos">
+      <button onclick="save('${type}')">Sačuvaj</button>
+    </div>
+  `;
 }
 
 function save(type){
@@ -106,13 +90,12 @@ function save(type){
     body: JSON.stringify({
       type,
       prostorId: PROSTOR_ID,
-      pasId: window.lastData?.pas?.[0],
+      pasId: window.lastData.pas[0],
       value: document.getElementById("val").value
     })
   })
   .then(r => r.json())
   .then(() => {
-    alert("Sačuvano");
     loadBox();
   });
 }
