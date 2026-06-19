@@ -1,106 +1,135 @@
-const urlParams = new URLSearchParams(window.location.search);
-const PROSTOR_ID = urlParams.get("prostor");
+function doGet(e){
 
-window.onload = loadBox;
+  const action = e.parameter.action;
+  const callback = e.parameter.callback;
 
-function loadBox(){
+  let result = {success:false};
 
-  window.handleResponse = function(data){
-    if(!data || !data.success){
-      document.getElementById("app").innerHTML = "Greška";
-      return;
+  if(action === "getBox"){
+    result = getBox(e.parameter.prostorId);
+  }
+
+  const json = JSON.stringify(result);
+
+  if(callback){
+    return ContentService
+      .createTextOutput(callback + "(" + json + ");")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return ContentService
+    .createTextOutput(json)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+function getBox(prostorId){
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const p = ss.getSheetByName("PROSTOR").getDataRange().getValues();
+  const s = ss.getSheetByName("SMESTAJ").getDataRange().getValues();
+  const psi = ss.getSheetByName("PSI").getDataRange().getValues();
+
+  const prostor = p.slice(1).find(r => r[0] == prostorId);
+
+  if(!prostor){
+    return {success:false};
+  }
+
+  const smestaj = s.slice(1).find(r =>
+    r[1] == prostorId && (!r[4] || r[4] === "")
+  );
+
+  let pas = null;
+
+  if(smestaj){
+    pas = psi.slice(1).find(r => r[0] == smestaj[2]);
+  }
+
+  // --- DODATO: poslednji zapisi (ALI OSTAJU ARRAY) ---
+  const tez = ss.getSheetByName("TEZINE").getDataRange().getValues().slice(1);
+  const pran = ss.getSheetByName("PRANJE").getDataRange().getValues().slice(1);
+  const kr = ss.getSheetByName("KRPELJI").getDataRange().getValues().slice(1);
+  const pa = ss.getSheetByName("PARAZITI").getDataRange().getValues().slice(1);
+  const be = ss.getSheetByName("BESNILO").getDataRange().getValues().slice(1);
+
+  const lastTezina = pas ? tez.filter(r => r[1]==pas[0]).slice(-1)[0] : null;
+  const lastPranje = pran.filter(r => r[1]==prostorId).slice(-1)[0] || null;
+
+  const lastKr = pas ? kr.filter(r => r[1]==pas[0]).slice(-1)[0] : null;
+  const lastPa = pas ? pa.filter(r => r[1]==pas[0]).slice(-1)[0] : null;
+  const lastBe = pas ? be.filter(r => r[1]==pas[0]).slice(-1)[0] : null;
+
+  return {
+    success:true,
+    prostor:prostor,
+    smestaj:smestaj || null,
+    pas:pas,
+
+    lastTezina:lastTezina,
+    lastPranje:lastPranje,
+
+    health:{
+      krpelji: !!lastKr,
+      paraziti: !!lastPa,
+      besnilo: !!lastBe
     }
-
-    window.lastData = data;
-    render(data);
   };
-
-  const s = document.createElement("script");
-
-  s.src =
-    CONFIG.API_URL +
-    "?action=getBox&prostorId=" +
-    PROSTOR_ID +
-    "&callback=handleResponse";
-
-  document.body.appendChild(s);
 }
 
-function render(data){
 
-  const p = data.prostor;
-  const pas = data.pas;
+function doPost(e){
 
-  let html = "";
+  const d = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  html += `
-    <div class="card">
-      <h2>Boks: ${p.oznaka}</h2>
-      <p>Status: ${p.status}</p>
-    </div>
+  if(d.type === "tezina"){
+    ss.getSheetByName("TEZINE").appendRow([
+      "TEZ"+Date.now(),
+      d.pasId,
+      new Date(),
+      d.value
+    ]);
+  }
 
-    <div class="card">
-      <h3>Pas</h3>
-      <p><b>${pas?.ime || "-"}</b></p>
-      <p>Pol: ${pas?.pol || "-"}</p>
-      <p>Datum rođenja: ${pas?.datumRodjenja || "-"}</p>
-      <p>Rodovnik: ${pas?.rodovnik || "-"}</p>
-    </div>
+  if(d.type === "pranje"){
+    ss.getSheetByName("PRANJE").appendRow([
+      "PRN"+Date.now(),
+      d.prostorId,
+      new Date(),
+      d.value
+    ]);
+  }
 
-    <div class="card">
-      <h3>Ishrana</h3>
-      <p>Težina: ${data.lastTezina?.tezina || "-"}</p>
-      <p>Hrana: ${data.lastTezina?.hrana || "-"}</p>
-    </div>
+  if(d.type === "krpelji"){
+    ss.getSheetByName("KRPELJI").appendRow([
+      "KRP"+Date.now(),
+      d.pasId,
+      new Date(),
+      d.value
+    ]);
+  }
 
-    <div class="card">
-      <h3>Zdravlje</h3>
-      <p>Krpelji: ${data.lastKrpelji ? "DA" : "NE"}</p>
-      <p>Paraziti: ${data.lastParaziti ? "DA" : "NE"}</p>
-      <p>Besnilo: ${data.lastBesnilo ? "DA" : "NE"}</p>
-    </div>
+  if(d.type === "paraziti"){
+    ss.getSheetByName("PARAZITI").appendRow([
+      "PAR"+Date.now(),
+      d.pasId,
+      new Date(),
+      d.value
+    ]);
+  }
 
-    <div class="card">
-      <h3>Pranje</h3>
-      <p>${data.lastPranje?.napomena || "-"}</p>
-      <button onclick="openForm('pranje')">Novo pranje</button>
-    </div>
+  if(d.type === "besnilo"){
+    ss.getSheetByName("BESNILO").appendRow([
+      "BES"+Date.now(),
+      d.pasId,
+      new Date(),
+      d.value
+    ]);
+  }
 
-    <div class="card">
-      <h3>Unos</h3>
-      <button onclick="openForm('tezina')">Težina</button>
-      <button onclick="openForm('krpelji')">Krpelji</button>
-      <button onclick="openForm('paraziti')">Paraziti</button>
-      <button onclick="openForm('besnilo')">Besnilo</button>
-    </div>
-
-    <div id="formArea"></div>
-  `;
-
-  document.getElementById("app").innerHTML = html;
-}
-
-function openForm(type){
-
-  document.getElementById("formArea").innerHTML = `
-    <div class="card">
-      <input id="val" placeholder="unos">
-      <button onclick="save('${type}')">Sačuvaj</button>
-    </div>
-  `;
-}
-
-function save(type){
-
-  fetch(CONFIG.API_URL, {
-    method:"POST",
-    body: JSON.stringify({
-      type,
-      prostorId: PROSTOR_ID,
-      pasId: window.lastData.pas.id,
-      value: document.getElementById("val").value
-    })
-  })
-  .then(r => r.json())
-  .then(() => loadBox());
+  return ContentService
+    .createTextOutput(JSON.stringify({success:true}))
+    .setMimeType(ContentService.MimeType.JSON);
 }
