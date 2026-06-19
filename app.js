@@ -38,7 +38,7 @@ function load(){
 }
 
 function render(d){
-
+  const qrUrl = window.location.href;
   const p = d.prostor;
   const pas = d.pas || {};
 
