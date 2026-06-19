@@ -45,7 +45,7 @@ function render(d){
   const tezine = d.istorija?.tezine || [];
   const pranja = d.istorija?.pranja || [];
   const zdravlje = d.zdravlje || {};
-
+const alerts = checkAlerts(d.zdravlje || {});
   document.getElementById("app").innerHTML = `
     
     <div class="card">
@@ -164,3 +164,24 @@ function save(type){
     })
   }).then(()=>load());
 }
+function checkAlerts(zdravlje){
+
+  const alerts = [];
+
+  if((zdravlje.krpelji?.length || 0) === 0){
+    alerts.push("⚠️ Nema tretmana protiv krpelja");
+  }
+
+  if((zdravlje.paraziti?.length || 0) === 0){
+    alerts.push("⚠️ Nema antiparazitnog tretmana");
+  }
+
+  if((zdravlje.besnilo?.length || 0) === 0){
+    alerts.push("⚠️ Nema vakcine protiv besnila");
+  }
+
+  return alerts;
+}<div class="card">
+  <h3>⚠️ Alerts</h3>
+  ${alerts.length ? alerts.map(a => `<p>${a}</p>`).join("") : "<p>OK</p>"}
+</div>
