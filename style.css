@@ -1,22 +1,17 @@
 body{
-  font-family: Arial;
-  background:#111;
+  background:#000;
   color:#fff;
+  font-family:Arial;
 }
 
 .card{
-  background:#222;
-  padding:15px;
+  background:#111;
   margin:10px;
-  border-radius:10px;
+  padding:10px;
+  border-radius:8px;
 }
 
 button{
-  margin:5px;
-  padding:10px;
-}
-
-input{
-  width:100%;
   padding:8px;
+  margin:5px;
 }
