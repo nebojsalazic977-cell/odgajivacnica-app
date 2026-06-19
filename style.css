@@ -1,28 +1,20 @@
-body {
+body{
   font-family: Arial;
-  background: #f4f4f4;
+  background:#111;
+  color:white;
 }
 
-.container {
-  max-width: 600px;
-  margin: auto;
-  background: white;
-  padding: 15px;
+.card{
+  background:#222;
+  padding:15px;
+  margin:10px;
+  border-radius:10px;
 }
-
-button {
-  margin: 5px;
-  padding: 10px;
+button{
+  margin:5px;
+  padding:10px;
 }
-.card {
-  display: block;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-h2, h3, p {
-  display: block;
-  margin: 6px 0;
+input{
+  padding:8px;
+  width:100%;
 }
