@@ -89,7 +89,14 @@ const alerts = checkAlerts(d.zdravlje || {});
       <p>Paraziti: ${zdravlje.paraziti?.length || 0}</p>
       <p>Besnilo: ${zdravlje.besnilo?.length || 0}</p>
     </div>
-
+<div class="card">
+  <h3>⚠️ Alerts</h3>
+  ${
+    alerts.length
+      ? alerts.map(a => `<p>${a}</p>`).join("")
+      : "<p>Sve je u redu</p>"
+  }
+</div>
     <div class="card">
       <button onclick="openForm('tezina')">Težina</button>
       <button onclick="openForm('pranje')">Pranje</button>
@@ -181,7 +188,4 @@ function checkAlerts(zdravlje){
   }
 
   return alerts;
-}<div class="card">
-  <h3>⚠️ Alerts</h3>
-  ${alerts.length ? alerts.map(a => `<p>${a}</p>`).join("") : "<p>OK</p>"}
-</div>
+}
