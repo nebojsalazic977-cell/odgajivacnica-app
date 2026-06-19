@@ -104,6 +104,13 @@ function render(d){
   setTimeout(() => {
   drawChart(d.istorija?.tezine || []);
 }, 200);
+  function calcFood(weight){
+
+  if(!weight) return "-";
+
+  // osnovna formula (možeš kasnije menjati)
+  return (weight * 0.03).toFixed(2) + " kg / dan";
+}
 }
 
 
