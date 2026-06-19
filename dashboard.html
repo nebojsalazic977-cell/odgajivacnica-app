@@ -1,0 +1,20 @@
+<div id="app">Loading...</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
+
+fetch(API + "?action=getAllBoxes")
+.then(r => r.json())
+.then(data => {
+
+  document.getElementById("app").innerHTML =
+    data.map(b => `
+      <div style="border:1px solid #000; padding:10px; margin:10px">
+        <h3>${b[2]}</h3>
+        <p>ID: ${b[0]}</p>
+        <a href="boks.html?prostor=${b[0]}">Otvori</a>
+      </div>
+    `).join("");
+
+});
+</script>
