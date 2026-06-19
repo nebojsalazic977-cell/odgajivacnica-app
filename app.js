@@ -129,3 +129,28 @@ function save(type){
     })
   }).then(()=>load());
 }
+function drawChart(tezine){
+
+  const ctx = document.getElementById("chart");
+
+  if(!ctx || !tezine.length) return;
+
+  const labels = tezine.map(t =>
+    new Date(t.datum).toLocaleDateString()
+  );
+
+  const data = tezine.map(t => t.tezina);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Težina (kg)',
+        data,
+        borderColor: '#111',
+        tension: 0.3
+      }]
+    }
+  });
+}
