@@ -1,8 +1,10 @@
+
 const urlParams = new URLSearchParams(window.location.search);
 const PROSTOR_ID = urlParams.get("prostor");
 
 window.onload = loadBox;
 
+// -------------------- LOAD --------------------
 function loadBox(){
 
   window.handleResponse = function(data){
@@ -14,10 +16,16 @@ function loadBox(){
       return;
     }
 
+    window.lastData = data; // 🔥 BITNO
+
     render(data);
-  }
+  };
 
   const script = document.createElement("script");
+
+  script.onerror = function(){
+    document.getElementById("app").innerHTML = "API error";
+  };
 
   script.src =
     CONFIG.API_URL +
@@ -26,7 +34,10 @@ function loadBox(){
     "&callback=handleResponse";
 
   document.body.appendChild(script);
-}function render(data){
+}
+
+// -------------------- RENDER --------------------
+function render(data){
 
   const p = data.prostor;
   const pas = data.pas;
@@ -34,7 +45,6 @@ function loadBox(){
 
   let html = "";
 
-  // 🟦 BOKS
   html += `
     <div class="card">
       <h2>Boks: ${p[2]}</h2>
@@ -42,18 +52,13 @@ function loadBox(){
       <p>Površina: ${p[3]} m2</p>
       <p>Status: ${p[5]}</p>
     </div>
-  `;
 
-  // 🐶 PAS
-  html += `
     <div class="card">
       <h3>Pas</h3>
       <p><b>${pas ? pas[2] : "Nema psa"}</b></p>
-      <p>${pas ? pas[1] : ""}</p>
     </div>
   `;
 
-  // 📦 SMESTAJ
   if(s){
     html += `
       <div class="card">
@@ -63,21 +68,15 @@ function loadBox(){
     `;
   }
 
-  // 📊 LAST PODACI
-  html += `<div class="card"><h3>Poslednji podaci</h3>`;
-
-  html += `
-    <p>Težina: ${data.lastTezina ? data.lastTezina[3] + " kg" : "nema"}</p>
-    <p>Pranje: ${data.lastPranje ? new Date(data.lastPranje[2]).toLocaleDateString() : "nema"}</p>
-  `;
-
-  html += `</div>`;
-
-  // 🔘 AKCIJE
   html += `
     <div class="card">
-      <h3>Unos</h3>
+      <h3>Poslednji podaci</h3>
+      <p>Težina: ${data.lastTezina ? data.lastTezina[3] + " kg" : "nema"}</p>
+      <p>Pranje: ${data.lastPranje ? new Date(data.lastPranje[2]).toLocaleDateString() : "nema"}</p>
+    </div>
 
+    <div class="card">
+      <h3>Unos</h3>
       <button onclick="openForm('tezina')">Nova težina</button>
       <button onclick="openForm('pranje')">Novo pranje</button>
     </div>
@@ -86,28 +85,9 @@ function loadBox(){
   `;
 
   document.getElementById("app").innerHTML = html;
-}function save(type){
-
-  const value = document.getElementById("val").value;
-
-  const payload = {
-    action: "insert",
-    type: type,
-    prostorId: PROSTOR_ID,
-    pasId: DATA?.pas?.[0],
-    value: value
-  };
-
-  fetch(CONFIG.API_URL, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  })
-  .then(r => r.json())
-  .then(res => {
-    alert("Sačuvano!");
-    loadBox();
-  });
 }
+
+// -------------------- FORM --------------------
 function openForm(type){
 
   let html = "";
@@ -134,6 +114,8 @@ function openForm(type){
 
   document.getElementById("formArea").innerHTML = html;
 }
+
+// -------------------- SAVE --------------------
 function save(type){
 
   const value = document.getElementById("val").value;
@@ -154,31 +136,6 @@ function save(type){
 
     document.getElementById("formArea").innerHTML = "";
 
-    loadBox(); // refresh dashboard
+    loadBox();
   });
-}window.openForm = function(type){
-
-  let html = "";
-
-  if(type === "tezina"){
-    html = `
-      <div class="card">
-        <h3>Nova težina</h3>
-        <input id="val" type="number" placeholder="kg">
-        <button onclick="window.save('tezina')">Sačuvaj</button>
-      </div>
-    `;
-  }
-
-  if(type === "pranje"){
-    html = `
-      <div class="card">
-        <h3>Novo pranje</h3>
-        <input id="val" type="text" placeholder="napomena">
-        <button onclick="window.save('pranje')">Sačuvaj</button>
-      </div>
-    `;
-  }
-
-  document.getElementById("formArea").innerHTML = html;
-};
+}
