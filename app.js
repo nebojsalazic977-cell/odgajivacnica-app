@@ -156,4 +156,29 @@ function save(type){
 
     loadBox(); // refresh dashboard
   });
-}
+}window.openForm = function(type){
+
+  let html = "";
+
+  if(type === "tezina"){
+    html = `
+      <div class="card">
+        <h3>Nova težina</h3>
+        <input id="val" type="number" placeholder="kg">
+        <button onclick="window.save('tezina')">Sačuvaj</button>
+      </div>
+    `;
+  }
+
+  if(type === "pranje"){
+    html = `
+      <div class="card">
+        <h3>Novo pranje</h3>
+        <input id="val" type="text" placeholder="napomena">
+        <button onclick="window.save('pranje')">Sačuvaj</button>
+      </div>
+    `;
+  }
+
+  document.getElementById("formArea").innerHTML = html;
+};
