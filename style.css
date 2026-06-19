@@ -1,0 +1,16 @@
+body {
+  font-family: Arial;
+  background: #f4f4f4;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: white;
+  padding: 15px;
+}
+
+button {
+  margin: 5px;
+  padding: 10px;
+}
