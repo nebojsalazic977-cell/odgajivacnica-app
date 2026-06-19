@@ -1,3 +1,4 @@
+console.log("APP JS LOADED");
 const urlParams = new URLSearchParams(window.location.search);
 const PROSTOR_ID = urlParams.get("prostor");
 
