@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Odgajivacnica</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <h1>Odgajivačnica</h1>
+
+    <input id="prostorInput" placeholder="Unesi Prostor ID (PRO0001)">
+    <button onclick="go()">Otvori boks</button>
+  </div>
+
+<script>
+function go(){
+  const id = document.getElementById("prostorInput").value;
+  window.location.href = "boks.html?prostor=" + id;
+}
+</script>
+
+</body>
+</html>
