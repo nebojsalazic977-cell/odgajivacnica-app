@@ -14,14 +14,14 @@ function load(){
     .then(r => r.json())
     .then(data => {
 
+      console.log("DATA:", data);
+
       if(!data || !data.success){
         app.innerHTML = "API ERROR";
         return;
       }
 
-      window.DATA = data;
       render(data);
-
     })
     .catch(err => {
       console.error(err);
@@ -35,36 +35,35 @@ function render(d){
 
   const p = d.prostor || [];
   const pas = d.pas || {};
+
   const tezine = Array.isArray(d.istorija?.tezine) ? d.istorija.tezine : [];
   const pranja = Array.isArray(d.istorija?.pranja) ? d.istorija.pranja : [];
+
   const zdravlje = d.zdravlje || {};
 
-  const lastWeight = tezine.length
-    ? Number(tezine[tezine.length - 1].tezina)
-    : null;
+  const lastWeight = tezine.length ? Number(tezine[tezine.length - 1].tezina) : null;
 
-  const food = lastWeight
-    ? (lastWeight * 0.03).toFixed(2) + " kg / dan"
-    : "-";
+  const food = lastWeight ? (lastWeight * 0.03).toFixed(2) + " kg / dan" : "-";
 
   app.innerHTML = `
     
     <div class="card">
       <h2>📦 ${p[2] || "-"}</h2>
-      <p>Status: ${p[5] || "-"}</p>
+      <p><b>Status:</b> ${p[5] || "-"}</p>
+      <p><b>Površina:</b> ${p[3] || "-"}</p>
     </div>
 
     <div class="card">
       <h3>📲 QR BOKS</h3>
-      <img width="140"
+      <img width="150"
         src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.href)}">
     </div>
 
     <div class="card">
       <h3>🐶 Pas</h3>
-      <p><b>${pas.ime || "-"}</b></p>
-      <p>Rodovnik: ${pas.rodovnik || "-"}</p>
-      <p>Rođenje: ${pas.rodjenje || "-"}</p>
+      <p><b>Ime:</b> ${pas.ime || "-"}</p>
+      <p><b>Rodovnik:</b> ${pas.rodovnik || "-"}</p>
+      <p><b>Rođenje:</b> ${pas.rodjenje || "-"}</p>
     </div>
 
     <div class="card">
@@ -73,15 +72,15 @@ function render(d){
     </div>
 
     <div class="card">
-      <h3>📊 Težina trend</h3>
+      <h3>📊 Težina</h3>
       <canvas id="chart"></canvas>
     </div>
 
     <div class="card">
       <h3>🚿 Pranje</h3>
       ${pranja.length
-        ? pranja.map(p =>
-            `<p>${fmt(p.datum)} - ${p.napomena || "-"}</p>`
+        ? pranja.map(pr =>
+            `<p>${formatDate(pr.datum)} - ${pr.napomena || "-"}</p>`
           ).join("")
         : "<p>-</p>"
       }
@@ -89,9 +88,9 @@ function render(d){
 
     <div class="card">
       <h3>🏥 Zdravlje</h3>
-      <p>Krpelji: ${len(zdravlje.krpelji)}</p>
-      <p>Paraziti: ${len(zdravlje.paraziti)}</p>
-      <p>Besnilo: ${len(zdravlje.besnilo)}</p>
+      <p>Krpelji: ${safeLen(zdravlje.krpelji)}</p>
+      <p>Paraziti: ${safeLen(zdravlje.paraziti)}</p>
+      <p>Besnilo: ${safeLen(zdravlje.besnilo)}</p>
     </div>
 
     <div class="card">
@@ -105,18 +104,30 @@ function render(d){
     <div id="formArea"></div>
   `;
 
-  drawChart(tezine);
+  setTimeout(() => drawChart(tezine), 300);
 }
 
-// ---------------- CHART
+// ---------------- CHART SAFE
 
 function drawChart(tezine){
 
   const el = document.getElementById("chart");
-  if(!el || !window.Chart) return;
-  if(!tezine.length) return;
 
-  const labels = tezine.map(t => fmt(t.datum));
+  if(!el){
+    console.warn("NO CHART ELEMENT");
+    return;
+  }
+
+  if(!window.Chart){
+    console.warn("CHART.JS NOT LOADED");
+    return;
+  }
+
+  if(!tezine || !tezine.length){
+    return;
+  }
+
+  const labels = tezine.map(t => formatDate(t.datum));
   const data = tezine.map(t => Number(t.tezina));
 
   new Chart(el, {
@@ -124,7 +135,7 @@ function drawChart(tezine){
     data: {
       labels,
       datasets: [{
-        label: 'Težina',
+        label: 'Težina (kg)',
         data,
         borderColor: '#111',
         tension: 0.3
@@ -154,11 +165,11 @@ function save(type){
 
 // ---------------- HELPERS
 
-function len(arr){
+function safeLen(arr){
   return Array.isArray(arr) ? arr.length : 0;
 }
 
-function fmt(d){
+function formatDate(d){
   if(!d) return "-";
   return new Date(d).toLocaleDateString();
 }
