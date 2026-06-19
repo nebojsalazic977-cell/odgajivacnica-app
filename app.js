@@ -5,6 +5,8 @@ const API =
 
 window.onload = load;
 
+let DATA = null;
+
 function load(){
 
   const app = document.getElementById("app");
@@ -21,6 +23,7 @@ function load(){
         return;
       }
 
+      DATA = data;
       render(data);
     })
     .catch(err => {
@@ -28,6 +31,9 @@ function load(){
       app.innerHTML = "NETWORK ERROR";
     });
 }
+
+
+// ---------------- RENDER ----------------
 
 function render(d){
 
@@ -41,16 +47,16 @@ function render(d){
 
   const zdravlje = d.zdravlje || {};
 
-  const lastWeight = tezine.length ? Number(tezine[tezine.length - 1].tezina) : null;
-
+  const lastWeight = tezine.length ? Number(tezine.at(-1).tezina) : null;
   const food = lastWeight ? (lastWeight * 0.03).toFixed(2) + " kg / dan" : "-";
+
 
   app.innerHTML = `
     
     <div class="card">
-      <h2>📦 ${p[2] || "-"}</h2>
-      <p><b>Status:</b> ${p[5] || "-"}</p>
-      <p><b>Površina:</b> ${p[3] || "-"}</p>
+      <h2>📦 ${p?.[2] || "-"}</h2>
+      <p><b>Status:</b> ${p?.[5] || "-"}</p>
+      <p><b>Površina:</b> ${p?.[3] || "-"}</p>
     </div>
 
     <div class="card">
@@ -76,21 +82,67 @@ function render(d){
       <canvas id="chart"></canvas>
     </div>
 
+    <!-- PRANJE: SAMO POSLEDNJE -->
     <div class="card">
       <h3>🚿 Pranje</h3>
-      ${pranja.length
-        ? pranja.map(pr =>
-            `<p>${formatDate(pr.datum)} - ${pr.napomena || "-"}</p>`
-          ).join("")
-        : "<p>-</p>"
+      ${
+        pranja.length
+          ? `
+            <p><b>Poslednje:</b> ${formatDate(pranja.at(-1).datum)} - ${pranja.at(-1).napomena || "-"}</p>
+            <button onclick="toggle('pranja')">Istorija</button>
+            <div id="pranja" style="display:none">
+              ${pranja.map(p =>
+                `<p>${formatDate(p.datum)} - ${p.napomena}</p>`
+              ).join("")}
+            </div>
+          `
+          : "<p>-</p>"
       }
     </div>
 
+    <!-- KRPELJI -->
     <div class="card">
-      <h3>🏥 Zdravlje</h3>
-      <p>Krpelji: ${safeLen(zdravlje.krpelji)}</p>
-      <p>Paraziti: ${safeLen(zdravlje.paraziti)}</p>
-      <p>Besnilo: ${safeLen(zdravlje.besnilo)}</p>
+      <h3>🐾 Krpelji</h3>
+      <p><b>Poslednje:</b> ${formatDate(zdravlje.krpelji?.lastDate)}</p>
+      <p><b>Sredstvo:</b> ${zdravlje.krpelji?.lastValue || "-"}</p>
+      <p><b>Sledeće:</b> ${formatDate(zdravlje.krpelji?.nextDate)}</p>
+
+      <button onclick="toggle('krpeljiH')">Istorija</button>
+      <div id="krpeljiH" style="display:none">
+        ${(zdravlje.krpelji?.history || []).map(x =>
+          `<p>${formatDate(x.datum)} - ${x.value} → ${formatDate(x.next)}</p>`
+        ).join("")}
+      </div>
+    </div>
+
+    <!-- PARAZITI -->
+    <div class="card">
+      <h3>🪱 Paraziti</h3>
+      <p><b>Poslednje:</b> ${formatDate(zdravlje.paraziti?.lastDate)}</p>
+      <p><b>Sredstvo:</b> ${zdravlje.paraziti?.lastValue || "-"}</p>
+      <p><b>Sledeće:</b> ${formatDate(zdravlje.paraziti?.nextDate)}</p>
+
+      <button onclick="toggle('parazitiH')">Istorija</button>
+      <div id="parazitiH" style="display:none">
+        ${(zdravlje.paraziti?.history || []).map(x =>
+          `<p>${formatDate(x.datum)} - ${x.value} → ${formatDate(x.next)}</p>`
+        ).join("")}
+      </div>
+    </div>
+
+    <!-- BESNILO -->
+    <div class="card">
+      <h3>💉 Besnilo</h3>
+      <p><b>Poslednje:</b> ${formatDate(zdravlje.besnilo?.lastDate)}</p>
+      <p><b>Sredstvo:</b> ${zdravlje.besnilo?.lastValue || "-"}</p>
+      <p><b>Sledeće:</b> ${formatDate(zdravlje.besnilo?.nextDate)}</p>
+
+      <button onclick="toggle('besniloH')">Istorija</button>
+      <div id="besniloH" style="display:none">
+        ${(zdravlje.besnilo?.history || []).map(x =>
+          `<p>${formatDate(x.datum)} - ${x.value} → ${formatDate(x.next)}</p>`
+        ).join("")}
+      </div>
     </div>
 
     <div class="card">
@@ -107,25 +159,13 @@ function render(d){
   setTimeout(() => drawChart(tezine), 300);
 }
 
-// ---------------- CHART SAFE
+
+// ---------------- CHART ----------------
 
 function drawChart(tezine){
 
   const el = document.getElementById("chart");
-
-  if(!el){
-    console.warn("NO CHART ELEMENT");
-    return;
-  }
-
-  if(!window.Chart){
-    console.warn("CHART.JS NOT LOADED");
-    return;
-  }
-
-  if(!tezine || !tezine.length){
-    return;
-  }
+  if(!el || !window.Chart || !tezine.length) return;
 
   const labels = tezine.map(t => formatDate(t.datum));
   const data = tezine.map(t => Number(t.tezina));
@@ -144,32 +184,39 @@ function drawChart(tezine){
   });
 }
 
-// ---------------- SAVE
+
+// ---------------- SAVE ----------------
 
 function save(type){
 
-  const value = prompt("Unesi sredstvo (npr. NexGard / vakcina):");
+  const value = prompt("Unesi sredstvo:");
   if(!value) return;
 
-  const next = prompt("Datum sledeće doze (YYYY-MM-DD):");
+  const next = prompt("Sledeći datum (YYYY-MM-DD):");
 
   fetch(API, {
     method: "POST",
     body: JSON.stringify({
       type,
       prostorId: PROSTOR_ID,
-      pasId: window.DATA?.pas?.id,
+      pasId: DATA?.pas?.id,
       value,
       next
     })
   }).then(() => load());
 }
 
-// ---------------- HELPERS
 
-function safeLen(arr){
-  return Array.isArray(arr) ? arr.length : 0;
+// ---------------- TOGGLE HISTORY ----------------
+
+function toggle(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.style.display = el.style.display === "none" ? "block" : "none";
 }
+
+
+// ---------------- HELPERS ----------------
 
 function formatDate(d){
   if(!d) return "-";
