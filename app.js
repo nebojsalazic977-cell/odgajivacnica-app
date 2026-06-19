@@ -148,9 +148,10 @@ function drawChart(tezine){
 
 function save(type){
 
-  const value = prompt("Unos:");
-
+  const value = prompt("Unesi sredstvo (npr. NexGard / vakcina):");
   if(!value) return;
+
+  const next = prompt("Datum sledeće doze (YYYY-MM-DD):");
 
   fetch(API, {
     method: "POST",
@@ -158,7 +159,8 @@ function save(type){
       type,
       prostorId: PROSTOR_ID,
       pasId: window.DATA?.pas?.id,
-      value
+      value,
+      next
     })
   }).then(() => load());
 }
