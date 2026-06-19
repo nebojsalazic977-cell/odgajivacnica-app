@@ -14,7 +14,7 @@ function loadBox(){
       DATA = data;
 
       if(!data.success){
-        document.getElementById("boxTitle").innerText = "Greška";
+        document.body.innerHTML = "<h2>Greška: boks nije pronađen</h2>";
         return;
       }
 
@@ -24,24 +24,63 @@ function loadBox(){
 
 function render(data){
 
-  document.getElementById("boxTitle").innerText =
-    "Boks: " + PROSTOR_ID;
+  const p = data.prostor;
+  const s = data.smestaj;
+  const pas = data.pas;
 
   let html = "";
 
-  if(data.pas){
+  // 🟦 PROSTOR
+  html += `
+    <div class="card">
+      <h2>Boks: ${p[2]}</h2>
+      <p><b>Tip:</b> ${p[1]}</p>
+      <p><b>Površina:</b> ${p[3]} m2</p>
+      <p><b>Status:</b> ${p[5]}</p>
+    </div>
+  `;
 
+  // 🐶 PAS
+  if(pas){
     html += `
-      <h3>Pas</h3>
-      <p><b>Ime:</b> ${data.pas[2]}</p>
-      <p><b>Pol:</b> ${data.pas[1]}</p>
-      <p><b>Rodovnik:</b> ${data.pas[4]}</p>
+      <div class="card">
+        <h3>Pas</h3>
+        <p><b>Ime:</b> ${pas[2]}</p>
+        <p><b>Pol:</b> ${pas[1]}</p>
+        <p><b>Datum rođenja:</b> ${pas[3]}</p>
+        <p><b>Rodovnik:</b> ${pas[4]}</p>
+      </div>
     `;
   } else {
-    html += "<p>Nema psa u boksu</p>";
+    html += `<div class="card"><p>Nema psa u boksu</p></div>`;
   }
 
-  document.getElementById("dogInfo").innerHTML = html;
+  // 📦 SMESTAJ
+  if(s){
+    html += `
+      <div class="card">
+        <h3>Smestaj</h3>
+        <p><b>Ulazak:</b> ${new Date(s[3]).toLocaleDateString()}</p>
+      </div>
+    `;
+  }
+
+  // 📊 AKCIJE
+  html += `
+    <div class="card">
+      <h3>Unos podataka</h3>
+
+      <button onclick="openForm('tezina')">Nova težina</button>
+      <button onclick="openForm('pranje')">Novo pranje</button>
+      <button onclick="openForm('krpelji')">Krpelji</button>
+      <button onclick="openForm('paraziti')">Paraziti</button>
+      <button onclick="openForm('besnilo')">Besnilo</button>
+    </div>
+
+    <div id="formArea"></div>
+  `;
+
+  document.getElementById("app").innerHTML = html;
 }
 
 function openForm(type){
@@ -50,30 +89,52 @@ function openForm(type){
 
   if(type === "tezina"){
     form = `
-      <h3>Nova težina</h3>
-      <input id="val" placeholder="Težina">
-      <button onclick="save('tezina')">Sačuvaj</button>
+      <div class="card">
+        <h3>Nova težina</h3>
+        <input id="val" placeholder="Težina (kg)">
+        <button onclick="save('tezina')">Sačuvaj</button>
+      </div>
     `;
   }
 
   if(type === "pranje"){
     form = `
-      <h3>Novo pranje</h3>
-      <input id="val" placeholder="Oprao (ime)">
-      <button onclick="save('pranje')">Sačuvaj</button>
+      <div class="card">
+        <h3>Novo pranje</h3>
+        <input id="val" placeholder="Ko je oprao">
+        <button onclick="save('pranje')">Sačuvaj</button>
+      </div>
     `;
   }
 
   if(type === "krpelji"){
-    form = `<h3>Krpelji</h3><input id="val"><button onclick="save('krpelji')">Sačuvaj</button>`;
+    form = `
+      <div class="card">
+        <h3>Krpelji</h3>
+        <input id="val" placeholder="Sredstvo">
+        <button onclick="save('krpelji')">Sačuvaj</button>
+      </div>
+    `;
   }
 
   if(type === "paraziti"){
-    form = `<h3>Paraziti</h3><input id="val"><button onclick="save('paraziti')">Sačuvaj</button>`;
+    form = `
+      <div class="card">
+        <h3>Paraziti</h3>
+        <input id="val" placeholder="Sredstvo">
+        <button onclick="save('paraziti')">Sačuvaj</button>
+      </div>
+    `;
   }
 
   if(type === "besnilo"){
-    form = `<h3>Besnilo</h3><input id="val"><button onclick="save('besnilo')">Sačuvaj</button>`;
+    form = `
+      <div class="card">
+        <h3>Besnilo</h3>
+        <input id="val" placeholder="Vakcina">
+        <button onclick="save('besnilo')">Sačuvaj</button>
+      </div>
+    `;
   }
 
   document.getElementById("formArea").innerHTML = form;
