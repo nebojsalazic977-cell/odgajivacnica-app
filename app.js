@@ -1,4 +1,3 @@
-
 const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
 window.onload = load;
@@ -17,7 +16,6 @@ function load(){
     }
 
     window.DATA = data;
-
     render(data);
   };
 
@@ -60,24 +58,15 @@ function render(d){
     </div>
 
     <div class="card">
-      <h3>🍗 Ishrana (istorija)</h3>
-      ${
-        <p>Hrana: ${tezine.length ? calcFood(tezine.at(-1).tezina) : "-"}</p>
-            `).join("")
-          : "<p>-</p>"
-      }
+      <h3>🍗 Ishrana</h3>
+      <p>Hrana: ${tezine.length ? calcFood(tezine.at(-1).tezina) : "-"}</p>
     </div>
-    function calcFood(weight){
 
-  if(!weight) return "-";
+    <div class="card">
+      <h3>📊 Trend težine</h3>
+      <canvas id="chart" height="120"></canvas>
+    </div>
 
-  // osnovna formula (možeš kasnije menjati)
-  return (weight * 0.03).toFixed(2) + " kg / dan";
-}
-<div class="card">
-  <h3>📊 Trend težine</h3>
-  <canvas id="chart" height="120"></canvas>
-</div>
     <div class="card">
       <h3>🚿 Pranje</h3>
       ${
@@ -106,19 +95,42 @@ function render(d){
 
     <div id="formArea"></div>
   `;
-  setTimeout(() => {
-  drawChart(d.istorija?.tezine || []);
-}, 200);
-  function calcFood(weight){
 
+  setTimeout(() => {
+    drawChart(tezine);
+  }, 200);
+}
+
+
+function calcFood(weight){
   if(!weight) return "-";
-
-  // osnovna formula (možeš kasnije menjati)
   return (weight * 0.03).toFixed(2) + " kg / dan";
+}
 
-  setTimeout(() => {
-  drawChart(d.istorija?.tezine || []);
-}, 200);
+
+function drawChart(tezine){
+
+  const ctx = document.getElementById("chart");
+  if(!ctx || !tezine.length) return;
+
+  const labels = tezine.map(t =>
+    new Date(t.datum).toLocaleDateString()
+  );
+
+  const data = tezine.map(t => t.tezina);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Težina (kg)',
+        data,
+        borderColor: '#111',
+        tension: 0.3
+      }]
+    }
+  });
 }
 
 
@@ -146,57 +158,4 @@ function save(type){
       value: document.getElementById("val").value
     })
   }).then(()=>load());
-}
-function drawChart(tezine){
-
-  const ctx = document.getElementById("chart");
-
-  if(!ctx || !tezine.length) return;
-
-  const labels = tezine.map(t =>
-    new Date(t.datum).toLocaleDateString()
-  );
-
-  const data = tezine.map(t => t.tezina);
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Težina (kg)',
-        data,
-        borderColor: '#111',
-        tension: 0.3
-      }]
-    }
-  });
-}function drawChart(tezine){
-
-  const ctx = document.getElementById("chart");
-  if(!ctx || !tezine.length) return;
-
-  const labels = tezine.map(t =>
-    new Date(t.datum).toLocaleDateString()
-  );
-
-  const data = tezine.map(t => t.tezina);
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Težina (kg)',
-        data,
-        borderColor: '#111',
-        tension: 0.3
-      }]
-    }
-  });
-}function calcFood(weight){
-
-  if(!weight) return "-";
-
-  return (weight * 0.03).toFixed(2) + " kg / dan";
 }
