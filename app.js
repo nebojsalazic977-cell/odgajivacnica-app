@@ -10,7 +10,7 @@ function loadBox(){
     console.log("DATA:", data);
 
     if(!data || !data.success){
-      document.getElementById("app").innerHTML = "Greška u učitavanju podataka";
+      document.getElementById("app").innerHTML = "Greška u učitavanju";
       return;
     }
 
@@ -18,6 +18,7 @@ function loadBox(){
   }
 
   const script = document.createElement("script");
+
   script.src =
     CONFIG.API_URL +
     "?action=getBox&prostorId=" +
@@ -35,7 +36,6 @@ function render(data){
 
   let html = "";
 
-  // 🟦 PROSTOR
   html += `
     <div class="card">
       <h2>Boks: ${p[2]}</h2>
@@ -43,17 +43,13 @@ function render(data){
       <p>Površina: ${p[3]} m2</p>
       <p>Status: ${p[5]}</p>
     </div>
-  `;
 
-  // 🐶 PAS
-  html += `
     <div class="card">
       <h3>Pas</h3>
-      <p>${pas ? pas[2] : "Nema psa u boksu"}</p>
+      <p>${pas ? pas[2] : "Nema psa"}</p>
     </div>
   `;
 
-  // 📦 SMESTAJ
   if(s){
     html += `
       <div class="card">
