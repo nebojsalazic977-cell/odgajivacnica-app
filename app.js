@@ -4,28 +4,20 @@ const PROSTOR_ID = urlParams.get("prostor");
 
 window.onload = loadBox;
 
-// -------------------- LOAD --------------------
 function loadBox(){
 
   window.handleResponse = function(data){
 
-    console.log("DATA:", data);
-
     if(!data || !data.success){
-      document.getElementById("app").innerHTML = "Greška u učitavanju";
+      document.getElementById("app").innerHTML = "Greška";
       return;
     }
 
-    window.lastData = data; // 🔥 BITNO
-
+    window.lastData = data;
     render(data);
   };
 
   const script = document.createElement("script");
-
-  script.onerror = function(){
-    document.getElementById("app").innerHTML = "API error";
-  };
 
   script.src =
     CONFIG.API_URL +
@@ -36,7 +28,6 @@ function loadBox(){
   document.body.appendChild(script);
 }
 
-// -------------------- RENDER --------------------
 function render(data){
 
   const p = data.prostor;
@@ -48,37 +39,31 @@ function render(data){
   html += `
     <div class="card">
       <h2>Boks: ${p[2]}</h2>
-      <p>Tip: ${p[1]}</p>
-      <p>Površina: ${p[3]} m2</p>
       <p>Status: ${p[5]}</p>
     </div>
 
     <div class="card">
       <h3>Pas</h3>
-      <p><b>${pas ? pas[2] : "Nema psa"}</b></p>
+      <p>${pas ? pas[2] : "Nema psa"}</p>
     </div>
-  `;
 
-  if(s){
-    html += `
-      <div class="card">
-        <h3>Smestaj</h3>
-        <p>Ulazak: ${new Date(s[3]).toLocaleDateString()}</p>
-      </div>
-    `;
-  }
-
-  html += `
     <div class="card">
-      <h3>Poslednji podaci</h3>
-      <p>Težina: ${data.lastTezina ? data.lastTezina[3] + " kg" : "nema"}</p>
-      <p>Pranje: ${data.lastPranje ? new Date(data.lastPranje[2]).toLocaleDateString() : "nema"}</p>
+      <h3>Zdravlje</h3>
+      <p>Krpelji: ${data.lastKrpelji ? "DA" : "NE"}</p>
+      <p>Paraziti: ${data.lastParaziti ? "DA" : "NE"}</p>
+      <p>Besnilo: ${data.lastBesnilo ? "DA" : "NE"}</p>
+    </div>
+
+    <div class="card">
+      <h3>Težina</h3>
+      <p>${data.lastTezina ? data.lastTezina[3] + " kg" : "nema"}</p>
+      <p>Hrana: ${data.lastTezina ? data.lastTezina[4] + " g" : "nema"}</p>
     </div>
 
     <div class="card">
       <h3>Unos</h3>
-      <button onclick="openForm('tezina')">Nova težina</button>
-      <button onclick="openForm('pranje')">Novo pranje</button>
+      <button onclick="openForm('tezina')">Težina</button>
+      <button onclick="openForm('pranje')">Pranje</button>
     </div>
 
     <div id="formArea"></div>
@@ -87,7 +72,6 @@ function render(data){
   document.getElementById("app").innerHTML = html;
 }
 
-// -------------------- FORM --------------------
 function openForm(type){
 
   let html = "";
@@ -95,8 +79,8 @@ function openForm(type){
   if(type === "tezina"){
     html = `
       <div class="card">
-        <h3>Nova težina</h3>
-        <input id="val" type="number" placeholder="kg">
+        <h3>Težina</h3>
+        <input id="val" type="number">
         <button onclick="save('tezina')">Sačuvaj</button>
       </div>
     `;
@@ -105,8 +89,8 @@ function openForm(type){
   if(type === "pranje"){
     html = `
       <div class="card">
-        <h3>Novo pranje</h3>
-        <input id="val" type="text" placeholder="napomena">
+        <h3>Pranje</h3>
+        <input id="val" type="text">
         <button onclick="save('pranje')">Sačuvaj</button>
       </div>
     `;
@@ -115,27 +99,20 @@ function openForm(type){
   document.getElementById("formArea").innerHTML = html;
 }
 
-// -------------------- SAVE --------------------
 function save(type){
-
-  const value = document.getElementById("val").value;
 
   fetch(CONFIG.API_URL, {
     method: "POST",
     body: JSON.stringify({
-      type: type,
+      type,
       prostorId: PROSTOR_ID,
       pasId: window.lastData?.pas?.[0],
-      value: value
+      value: document.getElementById("val").value
     })
   })
   .then(r => r.json())
-  .then(res => {
-
-    alert("Sačuvano!");
-
-    document.getElementById("formArea").innerHTML = "";
-
+  .then(() => {
+    alert("Sačuvano");
     loadBox();
   });
 }
