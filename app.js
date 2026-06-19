@@ -1,4 +1,5 @@
-const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
+
+alert("APP VERSION 3");const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
 window.onload = load;
 
