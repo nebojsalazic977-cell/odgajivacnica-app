@@ -54,7 +54,21 @@ function render(data){
   } else {
     html += `<div class="card"><p>Nema psa u boksu</p></div>`;
   }
+  // 📊 LAST DATA
+  if(data.lastTezina || data.lastPranje){
 
+    html += `<div class="card"><h3>Poslednji podaci</h3>`;
+
+    if(data.lastTezina){
+      html += `<p><b>Težina:</b> ${data.lastTezina[3]} kg</p>`;
+    }
+
+    if(data.lastPranje){
+      html += `<p><b>Pranje:</b> ${new Date(data.lastPranje[2]).toLocaleDateString()}</p>`;
+    }
+
+    html += `</div>`;
+  }
   // 📦 SMESTAJ
   if(s){
     html += `
