@@ -134,4 +134,26 @@ function openForm(type){
 
   document.getElementById("formArea").innerHTML = html;
 }
+function save(type){
 
+  const value = document.getElementById("val").value;
+
+  fetch(CONFIG.API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      type: type,
+      prostorId: PROSTOR_ID,
+      pasId: window.lastData?.pas?.[0],
+      value: value
+    })
+  })
+  .then(r => r.json())
+  .then(res => {
+
+    alert("Sačuvano!");
+
+    document.getElementById("formArea").innerHTML = "";
+
+    loadBox(); // refresh dashboard
+  });
+}
