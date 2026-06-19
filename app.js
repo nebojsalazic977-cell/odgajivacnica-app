@@ -62,13 +62,18 @@ function render(d){
     <div class="card">
       <h3>🍗 Ishrana (istorija)</h3>
       ${
-        tezine.length
-          ? tezine.map(t => `
-              <p>${new Date(t.datum).toLocaleDateString()} - ${t.tezina} kg / ${t.hrana || "-"}</p>
+        <p>Hrana: ${tezine.length ? calcFood(tezine.at(-1).tezina) : "-"}</p>
             `).join("")
           : "<p>-</p>"
       }
     </div>
+    function calcFood(weight){
+
+  if(!weight) return "-";
+
+  // osnovna formula (možeš kasnije menjati)
+  return (weight * 0.03).toFixed(2) + " kg / dan";
+}
 <div class="card">
   <h3>📊 Trend težine</h3>
   <canvas id="chart" height="120"></canvas>
@@ -110,7 +115,10 @@ function render(d){
 
   // osnovna formula (možeš kasnije menjati)
   return (weight * 0.03).toFixed(2) + " kg / dan";
-}
+
+  setTimeout(() => {
+  drawChart(d.istorija?.tezine || []);
+}, 200);
 }
 
 
@@ -163,4 +171,32 @@ function drawChart(tezine){
       }]
     }
   });
+}function drawChart(tezine){
+
+  const ctx = document.getElementById("chart");
+  if(!ctx || !tezine.length) return;
+
+  const labels = tezine.map(t =>
+    new Date(t.datum).toLocaleDateString()
+  );
+
+  const data = tezine.map(t => t.tezina);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Težina (kg)',
+        data,
+        borderColor: '#111',
+        tension: 0.3
+      }]
+    }
+  });
+}function calcFood(weight){
+
+  if(!weight) return "-";
+
+  return (weight * 0.03).toFixed(2) + " kg / dan";
 }
