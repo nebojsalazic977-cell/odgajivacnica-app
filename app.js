@@ -101,6 +101,9 @@ function render(d){
 
     <div id="formArea"></div>
   `;
+  setTimeout(() => {
+  drawChart(d.istorija?.tezine || []);
+}, 200);
 }
 
 
