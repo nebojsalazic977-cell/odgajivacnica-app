@@ -1,7 +1,7 @@
 body{
   font-family: Arial;
   background:#111;
-  color:white;
+  color:#fff;
 }
 
 .card{
@@ -10,11 +10,13 @@ body{
   margin:10px;
   border-radius:10px;
 }
+
 button{
   margin:5px;
   padding:10px;
 }
+
 input{
-  padding:8px;
   width:100%;
+  padding:8px;
 }
