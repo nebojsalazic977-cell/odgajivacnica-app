@@ -52,7 +52,10 @@ function render(d){
       <h2>📦 ${p?.[2] || "-"}</h2>
       <p>Status: ${p?.[5] || "-"}</p>
     </div>
-
+<div class="card">
+  <h3>📲 QR Boks</h3>
+  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.href)}">
+</div>
     <div class="card">
       <h3>🐶 Pas</h3>
       <p>${pas.ime || "-"}</p>
