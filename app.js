@@ -26,9 +26,7 @@ function loadBox(){
     "&callback=handleResponse";
 
   document.body.appendChild(script);
-}
-
-function render(data){
+}function render(data){
 
   const p = data.prostor;
   const pas = data.pas;
@@ -46,6 +44,16 @@ function render(data){
     </div>
   `;
 
+  // 🐶 PAS
+  html += `
+    <div class="card">
+      <h3>Pas</h3>
+      <p><b>${pas ? pas[2] : "Nema psa"}</b></p>
+      <p>${pas ? pas[1] : ""}</p>
+    </div>
+  `;
+
+  // 📦 SMESTAJ
   if(s){
     html += `
       <div class="card">
@@ -55,5 +63,29 @@ function render(data){
     `;
   }
 
+  // 📊 LAST PODACI
+  html += `<div class="card"><h3>Poslednji podaci</h3>`;
+
+  html += `
+    <p>Težina: ${data.lastTezina ? data.lastTezina[3] + " kg" : "nema"}</p>
+    <p>Pranje: ${data.lastPranje ? new Date(data.lastPranje[2]).toLocaleDateString() : "nema"}</p>
+  `;
+
+  html += `</div>`;
+
+  // 🔘 AKCIJE
+  html += `
+    <div class="card">
+      <h3>Unos</h3>
+
+      <button onclick="openForm('tezina')">Nova težina</button>
+      <button onclick="openForm('pranje')">Novo pranje</button>
+    </div>
+
+    <div id="formArea"></div>
+  `;
+
   document.getElementById("app").innerHTML = html;
 }
+
+
