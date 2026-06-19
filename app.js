@@ -1,6 +1,7 @@
 const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
+const API =
+"https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
 window.onload = load;
 
@@ -8,21 +9,23 @@ function load(){
 
   document.getElementById("app").innerHTML = "Loading...";
 
-  window.cb = function(data){
+  fetch(API + "?action=getBox&prostorId=" + PROSTOR_ID)
+    .then(r => r.json())
+    .then(data => {
 
-    console.log("DATA:", data);
+      console.log("DATA:", data);
 
-    if(!data || !data.success){
-      document.getElementById("app").innerHTML = "ERROR LOADING DATA";
-      return;
-    }
+      if(!data || !data.success){
+        document.getElementById("app").innerHTML = "API ERROR";
+        return;
+      }
 
-    render(data);
-  };
-
-  const s = document.createElement("script");
-  s.src = API_URL + "?action=getBox&prostorId=" + PROSTOR_ID + "&callback=cb";
-  document.body.appendChild(s);
+      render(data);
+    })
+    .catch(err => {
+      document.getElementById("app").innerHTML = "NETWORK ERROR";
+      console.error(err);
+    });
 }
 
 function render(d){
@@ -48,14 +51,15 @@ function render(d){
 
     <div class="card">
       <h3>🍗 Ishrana</h3>
-      <p>${tezine.length ? calcFood(tezine.at(-1).tezina) : "-"}</p>
+      <p>${tezine.length ? (tezine.at(-1).tezina * 0.03).toFixed(2) + " kg / dan" : "-"}</p>
     </div>
 
     <div class="card">
       <h3>🚿 Pranje</h3>
-      ${pranja.length ? pranja.map(p =>
-        `<p>${new Date(p.datum).toLocaleDateString()} - ${p.napomena}</p>`
-      ).join("") : "<p>-</p>"}
+      ${pranja.length
+        ? pranja.map(p => `<p>${new Date(p.datum).toLocaleDateString()} - ${p.napomena}</p>`).join("")
+        : "<p>-</p>"
+      }
     </div>
 
     <div class="card">
@@ -65,9 +69,4 @@ function render(d){
       <p>Besnilo: ${zdravlje.besnilo?.length || 0}</p>
     </div>
   `;
-}
-
-function calcFood(weight){
-  if(!weight) return "-";
-  return (weight * 0.03).toFixed(2) + " kg / dan";
 }
