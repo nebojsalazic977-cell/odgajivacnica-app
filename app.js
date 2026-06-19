@@ -21,6 +21,7 @@ function load(){
   document.body.appendChild(s);
 }
 
+
 function render(d){
 
   const p = d.prostor;
@@ -29,35 +30,38 @@ function render(d){
   document.getElementById("app").innerHTML = `
     
     <div class="card">
-      <h2>📦 BOKS: ${p.oznaka}</h2>
-      <p>Status: ${p.status}</p>
-      <p>Tip: ${p.tip}</p>
-      <p>Površina: ${p.povrsina} m²</p>
+      <h2>📦 ${p[2]}</h2>
+      <p>Status: ${p[5]}</p>
     </div>
 
     <div class="card">
-      <h3>🐶 PAS</h3>
-      <p><b>${pas?.ime || "Nema psa"}</b></p>
-      <p>Pol: ${pas?.pol || "-"}</p>
+      <h3>🐶 Pas</h3>
+      <p>${pas?.ime || "-"}</p>
       <p>Rodovnik: ${pas?.rodovnik || "-"}</p>
-      <p>Datum rođenja: ${pas?.rodjenje || "-"}</p>
     </div>
 
     <div class="card">
-      <h3>🍗 ISHRANA</h3>
-      <p>Težina: ${d.lastTezina?.tezina || "-"}</p>
-      <p>Hrana: ${d.lastTezina?.hrana || "-"}</p>
+      <h3>🍗 Ishrana (istorija)</h3>
+      ${d.istorija.tezine.map(t => `
+        <p>${new Date(t.datum).toLocaleDateString()} - ${t.tezina} kg / ${t.hrana || "-"}</p>
+      `).join("") || "-"}
     </div>
 
     <div class="card">
-      <h3>🏥 ZDRAVLJE</h3>
-      <p>Krpelji: ${d.health.krpelji ? "DA" : "NE"}</p>
-      <p>Paraziti: ${d.health.paraziti ? "DA" : "NE"}</p>
-      <p>Besnilo: ${d.health.besnilo ? "DA" : "NE"}</p>
+      <h3>🚿 Pranje</h3>
+      ${d.istorija.pranja.map(p => `
+        <p>${new Date(p.datum).toLocaleDateString()} - ${p.napomena}</p>
+      `).join("") || "-"}
     </div>
 
     <div class="card">
-      <h3>⚙️ AKCIJE</h3>
+      <h3>🏥 Zdravlje log</h3>
+      <p>Krpelji: ${d.zdravlje.krpelji.length}</p>
+      <p>Paraziti: ${d.zdravlje.paraziti.length}</p>
+      <p>Besnilo: ${d.zdravlje.besnilo.length}</p>
+    </div>
+
+    <div class="card">
       <button onclick="openForm('tezina')">Težina</button>
       <button onclick="openForm('pranje')">Pranje</button>
       <button onclick="openForm('krpelji')">Krpelji</button>
