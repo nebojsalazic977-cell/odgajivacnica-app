@@ -36,17 +36,13 @@ function render(data){
 
   let html = "";
 
+  // 🟦 BOKS
   html += `
     <div class="card">
       <h2>Boks: ${p[2]}</h2>
       <p>Tip: ${p[1]}</p>
       <p>Površina: ${p[3]} m2</p>
       <p>Status: ${p[5]}</p>
-    </div>
-
-    <div class="card">
-      <h3>Pas</h3>
-      <p>${pas ? pas[2] : "Nema psa"}</p>
     </div>
   `;
 
