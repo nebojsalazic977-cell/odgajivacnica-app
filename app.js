@@ -5,19 +5,34 @@ window.onload = load;
 
 function load(){
 
+  document.getElementById("app").innerHTML = "Loading...";
+
   window.cb = (data)=>{
 
-    if(!data.success){
-      document.getElementById("app").innerHTML="ERROR";
+    console.log("DATA:", data);
+
+    if(!data || !data.success){
+      document.getElementById("app").innerHTML = "Greška u učitavanju";
       return;
     }
 
     window.DATA = data;
+
     render(data);
   };
 
   const s = document.createElement("script");
-  s.src = CONFIG.API_URL + "?action=getBox&prostorId=" + PROSTOR_ID + "&callback=cb";
+
+  s.onerror = () => {
+    document.getElementById("app").innerHTML = "API error";
+  };
+
+  s.src =
+    CONFIG.API_URL +
+    "?action=getBox&prostorId=" +
+    PROSTOR_ID +
+    "&callback=cb";
+
   document.body.appendChild(s);
 }
 
@@ -25,40 +40,52 @@ function load(){
 function render(d){
 
   const p = d.prostor;
-  const pas = d.pas;
+  const pas = d.pas || {};
+
+  const tezine = d.istorija?.tezine || [];
+  const pranja = d.istorija?.pranja || [];
+  const zdravlje = d.zdravlje || {};
 
   document.getElementById("app").innerHTML = `
     
     <div class="card">
-      <h2>📦 ${p[2]}</h2>
-      <p>Status: ${p[5]}</p>
+      <h2>📦 ${p?.[2] || "-"}</h2>
+      <p>Status: ${p?.[5] || "-"}</p>
     </div>
 
     <div class="card">
       <h3>🐶 Pas</h3>
-      <p>${pas?.ime || "-"}</p>
-      <p>Rodovnik: ${pas?.rodovnik || "-"}</p>
+      <p>${pas.ime || "-"}</p>
+      <p>Rodovnik: ${pas.rodovnik || "-"}</p>
     </div>
 
     <div class="card">
       <h3>🍗 Ishrana (istorija)</h3>
-      ${d.istorija.tezine.map(t => `
-        <p>${new Date(t.datum).toLocaleDateString()} - ${t.tezina} kg / ${t.hrana || "-"}</p>
-      `).join("") || "-"}
+      ${
+        tezine.length
+          ? tezine.map(t => `
+              <p>${new Date(t.datum).toLocaleDateString()} - ${t.tezina} kg / ${t.hrana || "-"}</p>
+            `).join("")
+          : "<p>-</p>"
+      }
     </div>
 
     <div class="card">
       <h3>🚿 Pranje</h3>
-      ${d.istorija.pranja.map(p => `
-        <p>${new Date(p.datum).toLocaleDateString()} - ${p.napomena}</p>
-      `).join("") || "-"}
+      ${
+        pranja.length
+          ? pranja.map(pr => `
+              <p>${new Date(pr.datum).toLocaleDateString()} - ${pr.napomena}</p>
+            `).join("")
+          : "<p>-</p>"
+      }
     </div>
 
     <div class="card">
       <h3>🏥 Zdravlje log</h3>
-      <p>Krpelji: ${d.zdravlje.krpelji.length}</p>
-      <p>Paraziti: ${d.zdravlje.paraziti.length}</p>
-      <p>Besnilo: ${d.zdravlje.besnilo.length}</p>
+      <p>Krpelji: ${zdravlje.krpelji?.length || 0}</p>
+      <p>Paraziti: ${zdravlje.paraziti?.length || 0}</p>
+      <p>Besnilo: ${zdravlje.besnilo?.length || 0}</p>
     </div>
 
     <div class="card">
@@ -72,6 +99,8 @@ function render(d){
     <div id="formArea"></div>
   `;
 }
+
+
 function openForm(type){
 
   document.getElementById("formArea").innerHTML = `
@@ -81,6 +110,7 @@ function openForm(type){
     </div>
   `;
 }
+
 
 function save(type){
 
