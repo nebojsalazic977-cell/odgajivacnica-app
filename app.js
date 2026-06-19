@@ -4,11 +4,14 @@ window.onload = load;
 
 function load(){
 
+  if(!window.CONFIG){
+    document.getElementById("app").innerHTML = "CONFIG ERROR";
+    return;
+  }
+
   document.getElementById("app").innerHTML = "Loading...";
 
   window.cb = (data)=>{
-
-    console.log("DATA:", data);
 
     if(!data || !data.success){
       document.getElementById("app").innerHTML = "Greška u učitavanju";
@@ -33,7 +36,6 @@ function load(){
 
   document.body.appendChild(s);
 }
-
 
 function render(d){
 
