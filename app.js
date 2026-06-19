@@ -8,19 +8,26 @@ window.onload = loadBox;
 
 function loadBox(){
 
-  fetch(`${CONFIG.API_URL}?action=getBox&prostorId=${PROSTOR_ID}`)
-    .then(r => r.json())
-    .then(data => {
+  const script = document.createElement("script");
 
-      DATA = data;
+  window.handleResponse = function(data){
 
-      if(!data.success){
-        document.body.innerHTML = "<h2>Greška: boks nije pronađen</h2>";
-        return;
-      }
+    DATA = data;
 
-      render(data);
-    });
+    if(!data.success){
+      document.getElementById("app").innerHTML = "Greška";
+      return;
+    }
+
+    render(data);
+  }
+
+  script.src =
+    CONFIG.API_URL +
+    "?action=getBox&prostorId=" + PROSTOR_ID +
+    "&callback=handleResponse";
+
+  document.body.appendChild(script);
 }
 
 function render(data){
