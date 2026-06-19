@@ -1,31 +1,27 @@
 const urlParams = new URLSearchParams(window.location.search);
 const PROSTOR_ID = urlParams.get("prostor");
 
-let DATA = null;
-
 window.onload = loadBox;
 
 function loadBox(){
-
-  const script = document.createElement("script");
 
   window.handleResponse = function(data){
 
     console.log("DATA:", data);
 
-    DATA = data;
-
     if(!data || !data.success){
-      document.getElementById("app").innerHTML = "Greška u podacima";
+      document.getElementById("app").innerHTML = "Greška u učitavanju podataka";
       return;
     }
 
     render(data);
   }
 
+  const script = document.createElement("script");
   script.src =
     CONFIG.API_URL +
-    "?action=getBox&prostorId=" + PROSTOR_ID +
+    "?action=getBox&prostorId=" +
+    PROSTOR_ID +
     "&callback=handleResponse";
 
   document.body.appendChild(script);
@@ -33,10 +29,39 @@ function loadBox(){
 
 function render(data){
 
-  document.getElementById("app").innerHTML = `
-    <h2>Boks: ${data.prostor[2]}</h2>
+  const p = data.prostor;
+  const pas = data.pas;
+  const s = data.smestaj;
 
-    <h3>Pas</h3>
-    <p>${data.pas ? data.pas[2] : "Nema psa"}</p>
+  let html = "";
+
+  // 🟦 PROSTOR
+  html += `
+    <div class="card">
+      <h2>Boks: ${p[2]}</h2>
+      <p>Tip: ${p[1]}</p>
+      <p>Površina: ${p[3]} m2</p>
+      <p>Status: ${p[5]}</p>
+    </div>
   `;
+
+  // 🐶 PAS
+  html += `
+    <div class="card">
+      <h3>Pas</h3>
+      <p>${pas ? pas[2] : "Nema psa u boksu"}</p>
+    </div>
+  `;
+
+  // 📦 SMESTAJ
+  if(s){
+    html += `
+      <div class="card">
+        <h3>Smestaj</h3>
+        <p>Ulazak: ${new Date(s[3]).toLocaleDateString()}</p>
+      </div>
+    `;
+  }
+
+  document.getElementById("app").innerHTML = html;
 }
