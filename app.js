@@ -27,31 +27,37 @@ function render(d){
   const pas = d.pas;
 
   document.getElementById("app").innerHTML = `
+    
     <div class="card">
-      <h2>${p.oznaka}</h2>
-      <p>${p.status}</p>
+      <h2>📦 BOKS: ${p.oznaka}</h2>
+      <p>Status: ${p.status}</p>
+      <p>Tip: ${p.tip}</p>
+      <p>Površina: ${p.povrsina} m²</p>
     </div>
 
     <div class="card">
-      <h3>Pas</h3>
-      <p>${pas?.ime || "-"}</p>
+      <h3>🐶 PAS</h3>
+      <p><b>${pas?.ime || "Nema psa"}</b></p>
+      <p>Pol: ${pas?.pol || "-"}</p>
       <p>Rodovnik: ${pas?.rodovnik || "-"}</p>
+      <p>Datum rođenja: ${pas?.rodjenje || "-"}</p>
     </div>
 
     <div class="card">
-      <h3>Ishrana</h3>
+      <h3>🍗 ISHRANA</h3>
       <p>Težina: ${d.lastTezina?.tezina || "-"}</p>
       <p>Hrana: ${d.lastTezina?.hrana || "-"}</p>
     </div>
 
     <div class="card">
-      <h3>Zdravlje</h3>
-      <p>Krpelji: ${d.health.krpelji ? "DA":"NE"}</p>
-      <p>Paraziti: ${d.health.paraziti ? "DA":"NE"}</p>
-      <p>Besnilo: ${d.health.besnilo ? "DA":"NE"}</p>
+      <h3>🏥 ZDRAVLJE</h3>
+      <p>Krpelji: ${d.health.krpelji ? "DA" : "NE"}</p>
+      <p>Paraziti: ${d.health.paraziti ? "DA" : "NE"}</p>
+      <p>Besnilo: ${d.health.besnilo ? "DA" : "NE"}</p>
     </div>
 
     <div class="card">
+      <h3>⚙️ AKCIJE</h3>
       <button onclick="openForm('tezina')">Težina</button>
       <button onclick="openForm('pranje')">Pranje</button>
       <button onclick="openForm('krpelji')">Krpelji</button>
@@ -62,7 +68,6 @@ function render(d){
     <div id="formArea"></div>
   `;
 }
-
 function openForm(type){
 
   document.getElementById("formArea").innerHTML = `
