@@ -3,9 +3,12 @@ const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 const API =
 "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
+let DATA = null;
+let ACTIVE_DOG = null;
+
 window.onload = load;
 
-let DATA = null;
+// ===================== LOAD =====================
 
 function load(){
 
@@ -24,7 +27,11 @@ function load(){
       }
 
       DATA = data;
-      render(data);
+
+      // default active dog = first
+      ACTIVE_DOG = data.pasi?.[0] || null;
+
+      render();
     })
     .catch(err => {
       console.error(err);
@@ -32,160 +39,151 @@ function load(){
     });
 }
 
+// ===================== RENDER BOX =====================
 
-// ---------------- RENDER ----------------
-
-function render(d){
+function render(){
 
   const app = document.getElementById("app");
 
-  const p = d.prostor || [];
-  const pas = d.pas || {};
-
-  const tezine = Array.isArray(d.istorija?.tezine) ? d.istorija.tezine : [];
-  const pranja = Array.isArray(d.istorija?.pranja) ? d.istorija.pranja : [];
-
-  const zdravlje = d.zdravlje || {};
-
-  const lastWeight = tezine.length ? Number(tezine.at(-1).tezina) : null;
-  const food = lastWeight ? (lastWeight * 0.03).toFixed(2) + " kg / dan" : "-";
-
+  const p = DATA.prostor;
+  const pasi = DATA.pasi || [];
+  const pranja = DATA.pranja || [];
 
   app.innerHTML = `
     
     <div class="card">
-      <h2>📦 ${p?.[2] || "-"}</h2>
-      <p><b>Status:</b> ${p?.[5] || "-"}</p>
-      <p><b>Površina:</b> ${p?.[3] || "-"}</p>
-    </div>
-
-   
-
-    <div class="card">
-      <h3>🐶 Pas</h3>
-      <p><b>Ime:</b> ${pas.ime || "-"}</p>
-      <p><b>Rodovnik:</b> ${pas.rodovnik || "-"}</p>
-      <p><b>Rođenje:</b> ${pas.rodjenje || "-"}</p>
+      <h2>📦 ${p.oznaka || "-"}</h2>
+      <p>Status: ${p.status || "-"}</p>
+      <p>Površina: ${p.povrsina || "-"}</p>
+      <p><b>Broj pasa:</b> ${pasi.length}</p>
     </div>
 
     <div class="card">
-      <h3>🍗 Ishrana</h3>
-      <p>${food}</p>
+      <h3>🐶 Psi u boksu</h3>
+      ${pasi.map(p => `
+        <button onclick="selectDog('${p.id}')"
+          style="display:block;margin:5px 0;padding:6px;width:100%">
+          ${p.ime}
+        </button>
+      `).join("")}
     </div>
 
-    <div class="card">
-      <h3>📊 Težina</h3>
-      <canvas id="chart"></canvas>
-    </div>
+    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<p>Nema pasa</p>"}
 
-    <!-- PRANJE: SAMO POSLEDNJE -->
     <div class="card">
-      <h3>🚿 Pranje</h3>
+      <h3>🚿 Pranje boksa</h3>
       ${
         pranja.length
           ? `
-            <p><b>Poslednje:</b> ${formatDate(pranja.at(-1).datum)} - ${pranja.at(-1).napomena || "-"}</p>
-            <button onclick="toggle('pranja')">Istorija</button>
-            <div id="pranja" style="display:none">
-              ${pranja.map(p =>
-                `<p>${formatDate(p.datum)} - ${p.napomena}</p>`
-              ).join("")}
+            <p><b>Poslednje:</b> ${format(pranja.at(-1).datum)} - ${pranja.at(-1).oprao || "-"}</p>
+            <button onclick="toggle('washHist')">Istorija</button>
+            <div id="washHist" style="display:none">
+              ${pranja.map(p => `<p>${format(p.datum)} - ${p.oprao}</p>`).join("")}
             </div>
           `
           : "<p>-</p>"
       }
     </div>
+  `;
+}
 
-    <!-- KRPELJI -->
+// ===================== DOG CARD =====================
+
+function renderDog(d){
+
+  const tezine = d.tezine || [];
+
+  return `
     <div class="card">
-      <h3>🐾 Krpelji</h3>
-      <p><b>Poslednje:</b> ${formatDate(zdravlje.krpelji?.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${zdravlje.krpelji?.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${formatDate(zdravlje.krpelji?.nextDate)}</p>
-
-      <button onclick="toggle('krpeljiH')">Istorija</button>
-      <div id="krpeljiH" style="display:none">
-        ${(zdravlje.krpelji?.history || []).map(x =>
-          `<p>${formatDate(x.datum)} - ${x.value} → ${formatDate(x.next)}</p>`
-        ).join("")}
-      </div>
+      <h2>🐶 ${d.ime}</h2>
+      <p>Pol: ${d.pol || "-"}</p>
+      <p>Rođenje: ${d.rodjenje || "-"}</p>
+      <p>Rodovnik: ${d.rodovnik || "-"}</p>
     </div>
 
-    <!-- PARAZITI -->
     <div class="card">
-      <h3>🪱 Paraziti</h3>
-      <p><b>Poslednje:</b> ${formatDate(zdravlje.paraziti?.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${zdravlje.paraziti?.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${formatDate(zdravlje.paraziti?.nextDate)}</p>
-
-      <button onclick="toggle('parazitiH')">Istorija</button>
-      <div id="parazitiH" style="display:none">
-        ${(zdravlje.paraziti?.history || []).map(x =>
-          `<p>${formatDate(x.datum)} - ${x.value} → ${formatDate(x.next)}</p>`
-        ).join("")}
-      </div>
+      <h3>🍗 Težina</h3>
+      <p><b>Poslednja:</b> ${tezine.length ? tezine.at(-1).tezina + " kg" : "-"}</p>
+      <canvas id="chart"></canvas>
     </div>
 
-    <!-- BESNILO -->
-    <div class="card">
-      <h3>💉 Besnilo</h3>
-      <p><b>Poslednje:</b> ${formatDate(zdravlje.besnilo?.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${zdravlje.besnilo?.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${formatDate(zdravlje.besnilo?.nextDate)}</p>
-
-      <button onclick="toggle('besniloH')">Istorija</button>
-      <div id="besniloH" style="display:none">
-        ${(zdravlje.besnilo?.history || []).map(x =>
-          `<p>${formatDate(x.datum)} - ${x.value} → ${formatDate(x.next)}</p>`
-        ).join("")}
-      </div>
-    </div>
+    ${renderHealth("🐾 Krpelji", d.krpelji, "krpelji")}
+    ${renderHealth("🪱 Paraziti", d.paraziti, "paraziti")}
+    ${renderHealth("💉 Besnilo", d.besnilo, "besnilo")}
+    ${renderHealth("⚙️ Ostalo", d.ostalo, "ostalo")}
 
     <div class="card">
       <h3>⚙️ Akcije</h3>
-      <button onclick="save('pranje')">Pranje</button>
+      <button onclick="save('tezina')">Težina</button>
       <button onclick="save('krpelji')">Krpelji</button>
       <button onclick="save('paraziti')">Paraziti</button>
       <button onclick="save('besnilo')">Besnilo</button>
+      <button onclick="save('ostalo')">Ostalo</button>
     </div>
-
-    <div id="formArea"></div>
   `;
-
-  setTimeout(() => drawChart(tezine), 300);
 }
 
+// ===================== HEALTH BLOCK =====================
 
-// ---------------- CHART ----------------
+function renderHealth(title, data, key){
 
-function drawChart(tezine){
+  if(!data) return "";
+
+  return `
+    <div class="card">
+      <h3>${title}</h3>
+
+      <p><b>Poslednje:</b> ${format(data.lastDate)}</p>
+      <p><b>Sredstvo:</b> ${data.lastValue || "-"}</p>
+      <p><b>Sledeće:</b> ${format(data.nextDate)}</p>
+
+      <button onclick="toggle('${key}')">Istorija</button>
+
+      <div id="${key}" style="display:none">
+        ${(data.history || []).map(x =>
+          `<p>${format(x.datum)} - ${x.value} → ${format(x.next)}</p>`
+        ).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// ===================== SELECT DOG =====================
+
+function selectDog(id){
+
+  ACTIVE_DOG = DATA.pasi.find(p => p.id === id);
+  render();
+
+  setTimeout(() => drawChart(), 300);
+}
+
+// ===================== CHART =====================
+
+function drawChart(){
 
   const el = document.getElementById("chart");
-  if(!el || !window.Chart || !tezine.length) return;
-
-  const labels = tezine.map(t => formatDate(t.datum));
-  const data = tezine.map(t => Number(t.tezina));
+  if(!el || !ACTIVE_DOG?.tezine?.length) return;
 
   new Chart(el, {
-    type: 'line',
+    type: "line",
     data: {
-      labels,
+      labels: ACTIVE_DOG.tezine.map(t => format(t.datum)),
       datasets: [{
-        label: 'Težina (kg)',
-        data,
-        borderColor: '#111',
+        label: "Težina",
+        data: ACTIVE_DOG.tezine.map(t => t.tezina),
+        borderColor: "#111",
         tension: 0.3
       }]
     }
   });
 }
 
-
-// ---------------- SAVE ----------------
+// ===================== SAVE =====================
 
 function save(type){
 
-  const value = prompt("Unesi sredstvo:");
+  const value = prompt("Unos sredstva:");
   if(!value) return;
 
   const next = prompt("Sledeći datum (YYYY-MM-DD):");
@@ -195,15 +193,14 @@ function save(type){
     body: JSON.stringify({
       type,
       prostorId: PROSTOR_ID,
-      pasId: DATA?.pas?.id,
+      pasId: ACTIVE_DOG?.id,
       value,
       next
     })
   }).then(() => load());
 }
 
-
-// ---------------- TOGGLE HISTORY ----------------
+// ===================== TOGGLE =====================
 
 function toggle(id){
   const el = document.getElementById(id);
@@ -211,10 +208,9 @@ function toggle(id){
   el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
+// ===================== HELP =====================
 
-// ---------------- HELPERS ----------------
-
-function formatDate(d){
+function format(d){
   if(!d) return "-";
   return new Date(d).toLocaleDateString();
 }
