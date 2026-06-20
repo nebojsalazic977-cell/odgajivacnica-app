@@ -59,11 +59,7 @@ function render(d){
       <p><b>Površina:</b> ${p?.[3] || "-"}</p>
     </div>
 
-    <div class="card">
-      <h3>📲 QR BOKS</h3>
-      <img width="150"
-        src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.href)}">
-    </div>
+   
 
     <div class="card">
       <h3>🐶 Pas</h3>
