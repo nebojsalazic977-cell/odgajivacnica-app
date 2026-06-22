@@ -16,10 +16,13 @@ let ACTIVE_DOG = null;
 // ================= INIT =================
 
 window.onload = () => {
+  const app = document.getElementById("app");
+
   if (!PROSTOR_ID) {
-    document.getElementById("app").innerHTML = "Missing prostor ID";
+    app.innerHTML = "❌ Missing prostor ID";
     return;
   }
+
   load();
 };
 
@@ -30,7 +33,9 @@ function load() {
   const app = document.getElementById("app");
   app.innerHTML = "Loading...";
 
-  fetch(API + "?action=getBox&prostorId=" + PROSTOR_ID)
+  const url = `${API}?action=getBox&prostorId=${encodeURIComponent(PROSTOR_ID)}`;
+
+  fetch(url)
     .then(r => r.json())
     .then(data => {
 
@@ -57,8 +62,8 @@ function render() {
 
   const app = document.getElementById("app");
 
-  const p = DATA.prostor || {};
-  const pasi = DATA.pasi || [];
+  const p = DATA?.prostor || {};
+  const pasi = DATA?.pasi || [];
 
   app.innerHTML = `
     <div class="card">
@@ -69,13 +74,15 @@ function render() {
     </div>
 
     <div class="card">
-      <h3>🐶 Psi</h3>
+      <h3>🐶 Psi u boksu</h3>
       ${pasi.map(d => `
-        <button onclick="selectDog('${d.id}')">${d.ime}</button>
+        <button onclick="selectDog('${d.id}')">
+          ${d.ime}
+        </button>
       `).join("")}
     </div>
 
-    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : ""}
+    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
   `;
 }
 
@@ -83,8 +90,8 @@ function render() {
 
 function renderDog(d) {
 
-  const last = d.tezine?.at(-1);
-  const hist = d.tezine || [];
+  const tezine = d?.tezine || [];
+  const last = tezine.length ? tezine[tezine.length - 1] : null;
 
   return `
     <div class="card">
@@ -96,12 +103,12 @@ function renderDog(d) {
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p><b>${last?.tezina || "-"} kg</b></p>
-      <p><b>Hrana:</b> ${last?.hrana || "-"} g</p>
+      <p><b>${last?.tezina ?? "-"} kg</b></p>
+      <p><b>Hrana:</b> ${last?.hrana ?? "-"} g</p>
 
-      <h4>Istorija</h4>
-      ${hist.map(t => `
-        <p>${format(t.datum)} → ${t.tezina}kg / ${t.hrana || 0}g</p>
+      <h4>Istorija težine</h4>
+      ${tezine.map(t => `
+        <p>${format(t.datum)} → ${t.tezina} kg / ${t.hrana || 0} g</p>
       `).join("")}
     </div>
 
@@ -129,9 +136,9 @@ function renderHealth(title, data) {
   return `
     <div class="card">
       <h3>${title}</h3>
-      <p>Poslednje: ${format(data.lastDate)}</p>
-      <p>Sredstvo: ${data.lastValue || "-"}</p>
-      <p>Sledeće: ${format(data.nextDate)}</p>
+      <p><b>Poslednje:</b> ${format(data.lastDate)}</p>
+      <p><b>Sredstvo:</b> ${data.lastValue || "-"}</p>
+      <p><b>Sledeće:</b> ${format(data.nextDate)}</p>
 
       <h4>Istorija</h4>
       ${(data.history || []).map(h =>
@@ -139,13 +146,6 @@ function renderHealth(title, data) {
       ).join("")}
     </div>
   `;
-}
-
-// ================= HELPERS =================
-
-function format(d) {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString();
 }
 
 // ================= SELECT =================
@@ -159,18 +159,46 @@ function selectDog(id) {
 
 function save(type) {
 
-  if (!AUTHORIZED && prompt("PIN?") !== ADMIN_PIN) {
-    alert("Wrong PIN");
+  if (!AUTHORIZED) {
+    const pin = prompt("PIN?");
+    if (pin !== ADMIN_PIN) {
+      alert("Wrong PIN");
+      return;
+    }
+    AUTHORIZED = true;
+  }
+
+  // TEZINA
+  if (type === "tezina") {
+
+    const value = prompt("Težina (kg):");
+    if (!value) return;
+
+    const hrana = prompt("Hrana (g):");
+
+    fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type,
+        pasId: ACTIVE_DOG.id,
+        value,
+        hrana: hrana || 0
+      })
+    }).then(() => load());
+
     return;
   }
 
-  const value = prompt("Unos:");
+  // HEALTH
+  const value = prompt("Sredstvo:");
   if (!value) return;
 
   const next = prompt("Sledeći datum:");
 
   fetch(API, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       type,
       pasId: ACTIVE_DOG.id,
@@ -178,4 +206,11 @@ function save(type) {
       next
     })
   }).then(() => load());
+}
+
+// ================= HELPERS =================
+
+function format(d) {
+  if (!d) return "-";
+  return new Date(d).toLocaleDateString();
 }
