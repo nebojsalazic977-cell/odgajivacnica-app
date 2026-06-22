@@ -1,6 +1,6 @@
-const PIN = "4444"; // kasnije može iz Sheets-a
+const ADMIN_PIN = "1234";
+let AUTHORIZED = false;
 
-let AUTH = false;
 const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
 const API =
@@ -185,7 +185,13 @@ function drawChart(){
 // ===================== SAVE =====================
 
 function save(type){
+function save(type){
 
+  if(!verifyPIN()){
+    return;
+  }
+
+  // ostatak postojećeg koda
   // TEŽINA
   if(type === "tezina"){
 
@@ -272,4 +278,18 @@ function requestPIN(){
   } else {
     alert("❌ Pogrešan PIN");
   }
+}
+function verifyPIN(){
+
+  if(AUTHORIZED) return true;
+
+  const pin = prompt("Unesite PIN:");
+
+  if(pin === ADMIN_PIN){
+    AUTHORIZED = true;
+    return true;
+  }
+
+  alert("Pogrešan PIN");
+  return false;
 }
