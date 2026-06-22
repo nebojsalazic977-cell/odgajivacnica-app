@@ -172,30 +172,16 @@ function save(type) {
 
 fetch(API, {
   method: "POST",
+  mode: "no-cors",
   body: JSON.stringify(payload)
 })
-  .then(async r => {
-    const text = await r.text();
-    console.log("RAW RESPONSE:", text);
-
-    return JSON.parse(text);
-  })
-  .then(res => {
-
-    console.log("SERVER:", res);
-
-    if (!res.success) {
-      alert("SERVER ERROR: " + res.message);
-      return;
-    }
-
-    load();
-  })
-  .catch(err => {
-    console.error("POST ERROR:", err);
-    alert("Greška pri unosu");
-  });
-}
+.then(() => {
+  load();
+})
+.catch(err => {
+  console.error(err);
+  alert("Greška pri unosu");
+});
 
 // ================= HELPERS =================
 
