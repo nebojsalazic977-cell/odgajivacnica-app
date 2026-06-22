@@ -1,161 +1,122 @@
 const ADMIN_PIN = "1234";
-let AUTHORIZED = false;
+let AUTH = false;
 
-const params = new URLSearchParams(window.location.search);
-
-const PROSTOR_ID = params.get("prostor") || params.get("id");
+const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
 const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
 let DATA = null;
-let ACTIVE_DOG = null;
-
-// ================= INIT =================
+let ACTIVE = null;
 
 window.onload = () => {
-
-  if (!PROSTOR_ID) {
-    document.getElementById("app").innerHTML = "Missing prostor ID";
-    return;
-  }
-
+  if (!PROSTOR_ID) return show("Missing QR ID");
   load();
 };
 
-// ================= LOAD =================
+function show(t) {
+  document.getElementById("app").innerHTML = t;
+}
 
 function load() {
 
-  const app = document.getElementById("app");
-  app.innerHTML = "Loading...";
+  show("Loading...");
 
   fetch(`${API}?action=getBox&prostorId=${PROSTOR_ID}`)
     .then(r => r.json())
-    .then(data => {
+    .then(d => {
 
-      if (!data.success) {
-        app.innerHTML = "API ERROR";
-        console.error(data);
-        return;
+      if (!d.success) {
+        console.log(d);
+        return show("API ERROR");
       }
 
-      DATA = data;
-      ACTIVE_DOG = data.pasi?.[0] || null;
-
+      DATA = d;
+      ACTIVE = d.pasi?.[0] || null;
       render();
     })
-    .catch(err => {
-      console.error(err);
-      app.innerHTML = "NETWORK ERROR";
+    .catch(e => {
+      console.log(e);
+      show("NETWORK ERROR");
     });
 }
 
-// ================= RENDER =================
-
 function render() {
 
-  const app = document.getElementById("app");
   const p = DATA.prostor || {};
-  const pasi = DATA.pasi || [];
+  const psi = DATA.pasi || [];
 
-  app.innerHTML = `
+  document.getElementById("app").innerHTML = `
     <div class="card">
-      <h2>📦 ${p.oznaka || "-"}</h2>
-      <p>Status: ${p.status || "-"}</p>
-      <p>Površina: ${p.povrsina || "-"}</p>
-      <p>Pasa: ${pasi.length}</p>
+      <h2>${p.oznaka || "-"}</h2>
+      <p>${p.status || "-"}</p>
+      <p>${p.povrsina || "-"}</p>
+      <p>Pasa: ${psi.length}</p>
     </div>
 
     <div class="card">
-      <h3>🐶 Psi</h3>
-      ${pasi.map(d => `
-        <button onclick="selectDog('${d.id}')">${d.ime}</button>
-      `).join("")}
+      ${psi.map(x => `<button onclick="select('${x.id}')">${x.ime}</button>`).join("")}
     </div>
 
-    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : ""}
+    ${ACTIVE ? dog(ACTIVE) : ""}
   `;
 }
 
-// ================= DOG =================
-
-function renderDog(d) {
-
-  const lastW = d.tezine?.at(-1);
-  const lastF = d.ishrana?.at(-1);
+function dog(d) {
 
   return `
     <div class="card">
       <h2>${d.ime}</h2>
-      <p>${d.pol || "-"}</p>
+      <p>${d.pol}</p>
+      <p>${d.rodjenje}</p>
     </div>
 
     <div class="card">
-      <h3>⚖️ Težina</h3>
-      <p>${lastW?.value || "-"} kg</p>
+      <h3>Težina</h3>
+      ${(d.tezine || []).map(t => `<p>${t.datum} → ${t.value}</p>`).join("")}
     </div>
 
     <div class="card">
-      <h3>🍖 Ishrana</h3>
-      <p>${lastF?.value || "-"} g</p>
+      <h3>Ishrana</h3>
+      ${(d.ishrana || []).map(i => `<p>${i.datum} → ${i.value}</p>`).join("")}
     </div>
 
+    ${health("Krpelji", d.krpelji)}
+    ${health("Paraziti", d.paraziti)}
+    ${health("Besnilo", d.besnilo)}
+  `;
+}
+
+function health(t, d) {
+  if (!d) return "";
+  return `
     <div class="card">
-      <button onclick="save('tezina')">Težina</button>
-      <button onclick="save('ishrana')">Ishrana</button>
-      <button onclick="save('krpelji')">Krpelji</button>
-      <button onclick="save('paraziti')">Paraziti</button>
-      <button onclick="save('besnilo')">Besnilo</button>
-      <button onclick="save('ostalo')">Ostalo</button>
+      <h3>${t}</h3>
+      <p>${d.lastValue || "-"}</p>
     </div>
   `;
 }
 
-// ================= SELECT =================
-
-function selectDog(id) {
-  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
+function select(id) {
+  ACTIVE = DATA.pasi.find(x => x.id === id);
   render();
 }
 
-// ================= SAVE =================
-
 function save(type) {
 
-  if (!AUTHORIZED) {
-    const pin = prompt("PIN?");
-    if (pin !== ADMIN_PIN) return;
-    AUTHORIZED = true;
+  if (!AUTH) {
+    if (prompt("PIN?") !== ADMIN_PIN) return;
+    AUTH = true;
   }
 
   const value = prompt("Unos:");
   if (!value) return;
 
-  const next = prompt("Sledeći datum (opciono)");
-
   fetch(API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       type,
-      pasId: ACTIVE_DOG.id,
-      value,
-      next
+      pasId: ACTIVE.id,
+      value
     })
-  })
-  .then(r => r.json())
-  .then(res => {
-
-    if (!res.success) {
-      alert("Greška pri unosu");
-      console.error(res);
-      return;
-    }
-
-    load();
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Network error");
-  });
+  }).then(() => load());
 }
