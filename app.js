@@ -170,13 +170,10 @@ function save(type) {
 
   console.log("SENDING:", payload);
 
-  fetch(API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  })
+fetch(API, {
+  method: "POST",
+  body: JSON.stringify(payload)
+})
   .then(async r => {
     const text = await r.text();
     console.log("RAW RESPONSE:", text);
