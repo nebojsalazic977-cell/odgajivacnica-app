@@ -16,11 +16,10 @@ let ACTIVE_DOG = null;
 // ================= INIT =================
 
 window.onload = () => {
-
   const app = document.getElementById("app");
 
   if (!PROSTOR_ID) {
-    app.innerHTML = "❌ Missing QR parameter: prostor";
+    app.innerHTML = "❌ Missing QR parameter";
     return;
   }
 
@@ -32,35 +31,16 @@ window.onload = () => {
 function load() {
 
   const app = document.getElementById("app");
-
-  if (!PROSTOR_ID) {
-    app.innerHTML = "❌ QR nema prostor ID";
-    console.log("URL:", window.location.href);
-    return;
-  }
+  app.innerHTML = "Loading...";
 
   const url = `${API}?action=getBox&prostorId=${encodeURIComponent(PROSTOR_ID)}`;
 
-  console.log("FETCH URL:", url);
-
-  app.innerHTML = "Loading...";
-
-  fetch(url, {
-    method: "GET",
-    cache: "no-cache"
-  })
-    .then(async r => {
-
-      const text = await r.text();
-      console.log("RAW RESPONSE:", text);
-
-      return JSON.parse(text);
-    })
+  fetch(url)
+    .then(r => r.json())
     .then(data => {
 
-      console.log("DATA:", data);
-
       if (!data || !data.success) {
+        console.error(data);
         app.innerHTML = "API ERROR";
         return;
       }
@@ -71,10 +51,11 @@ function load() {
       render();
     })
     .catch(err => {
-      console.error("FETCH FAILED:", err);
-      app.innerHTML = "NETWORK ERROR (see console)";
+      console.error(err);
+      app.innerHTML = "NETWORK ERROR";
     });
 }
+
 // ================= RENDER =================
 
 function render() {
@@ -83,25 +64,26 @@ function render() {
 
   const p = DATA?.prostor || {};
   const pasi = DATA?.pasi || [];
+  const pranja = DATA?.pranja || [];
 
   app.innerHTML = `
     <div class="card">
-      <h2>📦 ${p?.oznaka || "-"}</h2>
-      <p>Status: ${p?.status || "-"}</p>
-      <p>Površina: ${p?.povrsina || "-"}</p>
+      <h2>📦 ${p.oznaka || "-"}</h2>
+      <p>Status: ${p.status || "-"}</p>
+      <p>Površina: ${p.povrsina || "-"}</p>
       <p><b>Pasa:</b> ${pasi.length}</p>
     </div>
 
     <div class="card">
-      <h3>🐶 Psi u boksu</h3>
+      <h3>🐶 Psi</h3>
       ${pasi.map(d => `
-        <button onclick="selectDog('${d.id}')">
-          ${d.ime}
-        </button>
+        <button onclick="selectDog('${d.id}')">${d.ime}</button>
       `).join("")}
     </div>
 
     ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
+
+    ${renderPranje(pranja)}
   `;
 }
 
@@ -110,10 +92,6 @@ function render() {
 function renderDog(d) {
 
   const last = d?.tezine?.at(-1);
-
-  const food = last?.hrana
-    ? last.hrana + " g"
-    : "-";
 
   return `
     <div class="card">
@@ -126,7 +104,7 @@ function renderDog(d) {
     <div class="card">
       <h3>⚖️ Težina</h3>
       <p><b>${last?.tezina ?? "-"} kg</b></p>
-      <p><b>Hrana:</b> ${food}</p>
+      <p><b>Hrana:</b> ${last?.hrana ?? "-"} g</p>
     </div>
 
     ${renderHealth("🐾 Krpelji", d.krpelji)}
@@ -135,7 +113,7 @@ function renderDog(d) {
     ${renderHealth("⚙️ Ostalo", d.ostalo)}
 
     <div class="card">
-      <button onclick="save('tezina')">Unos težine</button>
+      <button onclick="save('tezina')">Težina</button>
       <button onclick="save('krpelji')">Krpelji</button>
       <button onclick="save('paraziti')">Paraziti</button>
       <button onclick="save('besnilo')">Besnilo</button>
@@ -160,10 +138,25 @@ function renderHealth(title, data) {
   `;
 }
 
+// ================= PRANJE =================
+
+function renderPranje(pranja) {
+
+  if (!pranja.length) return "";
+
+  return `
+    <div class="card">
+      <h3>🚿 Pranje boksa</h3>
+      <p><b>Poslednje:</b> ${format(pranja.at(-1).datum)}</p>
+      <p><b>Napomena:</b> ${pranja.at(-1).napomena || "-"}</p>
+    </div>
+  `;
+}
+
 // ================= SELECT =================
 
 function selectDog(id) {
-  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
+  ACTIVE_DOG = DATA.pasi.find(x => x.id === id) || null;
   render();
 }
 
@@ -182,7 +175,7 @@ function save(type) {
     method: "POST",
     body: JSON.stringify({
       type,
-      pasId: ACTIVE_DOG.id,
+      pasId: ACTIVE_DOG?.id,
       value,
       next
     })
