@@ -16,13 +16,10 @@ let ACTIVE_DOG = null;
 // ================= INIT =================
 
 window.onload = () => {
-  const app = document.getElementById("app");
-
   if (!PROSTOR_ID) {
-    app.innerHTML = "❌ Missing QR parameter";
+    document.getElementById("app").innerHTML = "Missing prostor ID";
     return;
   }
-
   load();
 };
 
@@ -33,9 +30,7 @@ function load() {
   const app = document.getElementById("app");
   app.innerHTML = "Loading...";
 
-  const url = `${API}?action=getBox&prostorId=${encodeURIComponent(PROSTOR_ID)}`;
-
-  fetch(url)
+  fetch(API + "?action=getBox&prostorId=" + PROSTOR_ID)
     .then(r => r.json())
     .then(data => {
 
@@ -62,16 +57,15 @@ function render() {
 
   const app = document.getElementById("app");
 
-  const p = DATA?.prostor || {};
-  const pasi = DATA?.pasi || [];
-  const pranja = DATA?.pranja || [];
+  const p = DATA.prostor || {};
+  const pasi = DATA.pasi || [];
 
   app.innerHTML = `
     <div class="card">
       <h2>📦 ${p.oznaka || "-"}</h2>
       <p>Status: ${p.status || "-"}</p>
       <p>Površina: ${p.povrsina || "-"}</p>
-      <p><b>Pasa:</b> ${pasi.length}</p>
+      <p><b>Broj pasa:</b> ${pasi.length}</p>
     </div>
 
     <div class="card">
@@ -81,9 +75,7 @@ function render() {
       `).join("")}
     </div>
 
-    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
-
-    ${renderPranje(pranja)}
+    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : ""}
   `;
 }
 
@@ -91,11 +83,12 @@ function render() {
 
 function renderDog(d) {
 
-  const last = d?.tezine?.at(-1);
+  const last = d.tezine?.at(-1);
+  const hist = d.tezine || [];
 
   return `
     <div class="card">
-      <h2>🐶 ${d.ime}</h2>
+      <h2>${d.ime}</h2>
       <p>Pol: ${d.pol || "-"}</p>
       <p>Rođenje: ${d.rodjenje || "-"}</p>
       <p>Rodovnik: ${d.rodovnik || "-"}</p>
@@ -103,8 +96,13 @@ function renderDog(d) {
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p><b>${last?.tezina ?? "-"} kg</b></p>
-      <p><b>Hrana:</b> ${last?.hrana ?? "-"} g</p>
+      <p><b>${last?.tezina || "-"} kg</b></p>
+      <p><b>Hrana:</b> ${last?.hrana || "-"} g</p>
+
+      <h4>Istorija</h4>
+      ${hist.map(t => `
+        <p>${format(t.datum)} → ${t.tezina}kg / ${t.hrana || 0}g</p>
+      `).join("")}
     </div>
 
     ${renderHealth("🐾 Krpelji", d.krpelji)}
@@ -131,32 +129,29 @@ function renderHealth(title, data) {
   return `
     <div class="card">
       <h3>${title}</h3>
-      <p><b>Poslednje:</b> ${format(data.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${data.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${format(data.nextDate)}</p>
+      <p>Poslednje: ${format(data.lastDate)}</p>
+      <p>Sredstvo: ${data.lastValue || "-"}</p>
+      <p>Sledeće: ${format(data.nextDate)}</p>
+
+      <h4>Istorija</h4>
+      ${(data.history || []).map(h =>
+        `<p>${format(h.datum)} → ${h.value}</p>`
+      ).join("")}
     </div>
   `;
 }
 
-// ================= PRANJE =================
+// ================= HELPERS =================
 
-function renderPranje(pranja) {
-
-  if (!pranja.length) return "";
-
-  return `
-    <div class="card">
-      <h3>🚿 Pranje boksa</h3>
-      <p><b>Poslednje:</b> ${format(pranja.at(-1).datum)}</p>
-      <p><b>Napomena:</b> ${pranja.at(-1).napomena || "-"}</p>
-    </div>
-  `;
+function format(d) {
+  if (!d) return "-";
+  return new Date(d).toLocaleDateString();
 }
 
 // ================= SELECT =================
 
 function selectDog(id) {
-  ACTIVE_DOG = DATA.pasi.find(x => x.id === id) || null;
+  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
   render();
 }
 
@@ -164,44 +159,23 @@ function selectDog(id) {
 
 function save(type) {
 
-  if (!verifyPIN()) return;
+  if (!AUTHORIZED && prompt("PIN?") !== ADMIN_PIN) {
+    alert("Wrong PIN");
+    return;
+  }
 
   const value = prompt("Unos:");
   if (!value) return;
 
-  const next = prompt("Sledeći datum (YYYY-MM-DD):");
+  const next = prompt("Sledeći datum:");
 
   fetch(API, {
     method: "POST",
     body: JSON.stringify({
       type,
-      pasId: ACTIVE_DOG?.id,
+      pasId: ACTIVE_DOG.id,
       value,
       next
     })
   }).then(() => load());
-}
-
-// ================= PIN =================
-
-function verifyPIN() {
-
-  if (AUTHORIZED) return true;
-
-  const pin = prompt("PIN:");
-
-  if (pin === ADMIN_PIN) {
-    AUTHORIZED = true;
-    return true;
-  }
-
-  alert("Pogrešan PIN");
-  return false;
-}
-
-// ================= HELP =================
-
-function format(d) {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString();
 }
