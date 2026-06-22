@@ -3,9 +3,7 @@ let AUTHORIZED = false;
 
 const params = new URLSearchParams(window.location.search);
 
-const PROSTOR_ID =
-  params.get("prostor") ||
-  params.get("id");
+const PROSTOR_ID = params.get("prostor") || params.get("id");
 
 const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
@@ -36,8 +34,8 @@ function load() {
     .then(data => {
 
       if (!data.success) {
-        console.error(data);
         app.innerHTML = "API ERROR";
+        console.error(data);
         return;
       }
 
@@ -57,7 +55,6 @@ function load() {
 function render() {
 
   const app = document.getElementById("app");
-
   const p = DATA.prostor || {};
   const pasi = DATA.pasi || [];
 
@@ -66,7 +63,7 @@ function render() {
       <h2>📦 ${p.oznaka || "-"}</h2>
       <p>Status: ${p.status || "-"}</p>
       <p>Površina: ${p.povrsina || "-"}</p>
-      <p>Broj pasa: ${pasi.length}</p>
+      <p>Pasa: ${pasi.length}</p>
     </div>
 
     <div class="card">
@@ -90,35 +87,18 @@ function renderDog(d) {
   return `
     <div class="card">
       <h2>${d.ime}</h2>
-      <p>Pol: ${d.pol || "-"}</p>
-      <p>Rođenje: ${d.rodjenje || "-"}</p>
-      <p>Rodovnik: ${d.rodovnik || "-"}</p>
+      <p>${d.pol || "-"}</p>
     </div>
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p><b>${lastW?.value || "-"} kg</b></p>
-
-      <h4>Istorija</h4>
-      ${(d.tezine || []).map(t => `
-        <p>${format(t.datum)} → ${t.value} kg</p>
-      `).join("")}
+      <p>${lastW?.value || "-"} kg</p>
     </div>
 
     <div class="card">
       <h3>🍖 Ishrana</h3>
-      <p><b>${lastF?.value || "-"} g</b></p>
-
-      <h4>Istorija</h4>
-      ${(d.ishrana || []).map(i => `
-        <p>${format(i.datum)} → ${i.value} g</p>
-      `).join("")}
+      <p>${lastF?.value || "-"} g</p>
     </div>
-
-    ${renderHealth("Krpelji", d.krpelji)}
-    ${renderHealth("Paraziti", d.paraziti)}
-    ${renderHealth("Besnilo", d.besnilo)}
-    ${renderHealth("Ostalo", d.ostalo)}
 
     <div class="card">
       <button onclick="save('tezina')">Težina</button>
@@ -131,23 +111,15 @@ function renderDog(d) {
   `;
 }
 
-// ================= HEALTH =================
+// ================= SELECT =================
 
-function renderHealth(title, data) {
-
-  if (!data) return "";
-
-  return `
-    <div class="card">
-      <h3>${title}</h3>
-      <p>Poslednje: ${format(data.lastDate)}</p>
-      <p>Sredstvo: ${data.lastValue || "-"}</p>
-      <p>Sledeće: ${format(data.nextDate)}</p>
-    </div>
-  `;
+function selectDog(id) {
+  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
+  render();
 }
 
 // ================= SAVE =================
+
 function save(type) {
 
   if (!AUTHORIZED) {
@@ -161,38 +133,29 @@ function save(type) {
 
   const next = prompt("Sledeći datum (opciono)");
 
-  const payload = {
-    type,
-    pasId: ACTIVE_DOG.id,
-    value,
-    next
-  };
+  fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type,
+      pasId: ACTIVE_DOG.id,
+      value,
+      next
+    })
+  })
+  .then(r => r.json())
+  .then(res => {
 
-  console.log("SENDING:", payload);
+    if (!res.success) {
+      alert("Greška pri unosu");
+      console.error(res);
+      return;
+    }
 
-fetch(API, {
-  method: "POST",
-  mode: "no-cors",
-  body: JSON.stringify(payload)
-})
-.then(() => {
-  load();
-})
-.catch(err => {
-  console.error(err);
-  alert("Greška pri unosu");
-});
-
-// ================= HELPERS =================
-
-function format(d) {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString();
-}
-
-// ================= SELECT =================
-
-function selectDog(id) {
-  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
-  render();
+    load();
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Network error");
+  });
 }
