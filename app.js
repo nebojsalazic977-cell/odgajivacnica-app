@@ -1,3 +1,6 @@
+const PIN = "4444"; // kasnije može iz Sheets-a
+
+let AUTH = false;
 const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
 const API =
@@ -183,6 +186,12 @@ function drawChart(){
 
 function save(type){
 
+  if(!AUTH){
+    alert("Nemaš dozvolu za unos");
+    requestPIN();
+    if(!AUTH) return;
+  }
+
   const value = prompt("Unos sredstva:");
   if(!value) return;
 
@@ -213,4 +222,15 @@ function toggle(id){
 function format(d){
   if(!d) return "-";
   return new Date(d).toLocaleDateString();
+}
+function requestPIN(){
+
+  const input = prompt("Unesi PIN za izmene:");
+
+  if(input === PIN){
+    AUTH = true;
+    alert("✔ Odobren pristup");
+  } else {
+    alert("❌ Pogrešan PIN");
+  }
 }
