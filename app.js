@@ -176,7 +176,6 @@ function selectDog(id) {
 }
 
 // ================= SAVE =================
-
 function save(type) {
 
   if (!AUTHORIZED) {
@@ -188,7 +187,12 @@ function save(type) {
     AUTHORIZED = true;
   }
 
-  // TEZINA
+  let payload = {
+    type,
+    pasId: ACTIVE_DOG.id
+  };
+
+  // TEŽINA
   if (type === "tezina") {
 
     const value = prompt("Težina (kg):");
@@ -196,38 +200,39 @@ function save(type) {
 
     const hrana = prompt("Hrana (g):");
 
-    fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type,
-        pasId: ACTIVE_DOG.id,
-        value,
-        hrana: hrana || 0
-      })
-    }).then(() => load());
-
-    return;
+    payload.value = value;
+    payload.hrana = hrana || 0;
   }
 
   // HEALTH
-  const value = prompt("Sredstvo:");
-  if (!value) return;
+  else {
 
-  const next = prompt("Sledeći datum:");
+    const value = prompt("Sredstvo:");
+    if (!value) return;
+
+    const next = prompt("Sledeći datum:");
+
+    payload.value = value;
+    payload.next = next;
+  }
 
   fetch(API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type,
-      pasId: ACTIVE_DOG.id,
-      value,
-      next
-    })
-  }).then(() => load());
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    console.log("SAVE RESPONSE:", res);
+    load();
+  })
+  .catch(err => {
+    console.error("SAVE ERROR:", err);
+    alert("Greška pri unosu");
+  });
 }
-
 // ================= HELPERS =================
 
 function format(d) {
