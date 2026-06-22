@@ -3,18 +3,24 @@ let AUTHORIZED = false;
 
 const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
 
-const API =
-"https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
+const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
 let DATA = null;
 let ACTIVE_DOG = null;
 
-window.onload = load;
+// ===================== INIT =====================
+
+window.onload = () => {
+  if (!PROSTOR_ID) {
+    document.getElementById("app").innerHTML = "MISSING PROSTOR ID";
+    return;
+  }
+  load();
+};
 
 // ===================== LOAD =====================
 
-function load(){
-
+function load() {
   const app = document.getElementById("app");
   app.innerHTML = "Loading...";
 
@@ -22,134 +28,98 @@ function load(){
     .then(r => r.json())
     .then(data => {
 
-      console.log("DATA:", data);
+      console.log("API DATA:", data);
 
-      if(!data || !data.success){
+      if (!data || !data.success) {
         app.innerHTML = "API ERROR";
         return;
       }
 
       DATA = data;
 
-      if(!ACTIVE_DOG){
-        ACTIVE_DOG = (data.pasi && data.pasi.length) ? data.pasi[0] : null;
+      if (!ACTIVE_DOG) {
+        ACTIVE_DOG = data.pasi?.[0] || null;
       } else {
-        ACTIVE_DOG =
-          (data.pasi || []).find(x => x.id === ACTIVE_DOG.id)
-          || (data.pasi && data.pasi.length ? data.pasi[0] : null);
+        ACTIVE_DOG = data.pasi?.find(x => x.id === ACTIVE_DOG.id) || data.pasi?.[0] || null;
       }
 
       render();
     })
     .catch(err => {
       console.error(err);
-      app.innerHTML = "NETWORK ERROR";
+      document.getElementById("app").innerHTML = "NETWORK ERROR";
     });
 }
 
-// ===================== RENDER =====================
+// ===================== RENDER BOX =====================
 
-function render(){
-
+function render() {
   const app = document.getElementById("app");
 
-  const p = DATA.prostor || {};
-  const pasi = DATA.pasi || [];
-  const pranja = DATA.pranja || [];
-
-  const lastPranje = pranja.length ? pranja[pranja.length - 1] : null;
+  const p = DATA?.prostor || {};
+  const pasi = DATA?.pasi || [];
+  const pranja = DATA?.pranja || [];
 
   app.innerHTML = `
-
     <div class="card">
       <h2>📦 ${p.oznaka || "-"}</h2>
-      <p><b>Status:</b> ${p.status || "-"}</p>
-      <p><b>Površina:</b> ${p.povrsina || "-"}</p>
+      <p>Status: ${p.status || "-"}</p>
+      <p>Površina: ${p.povrsina || "-"}</p>
       <p><b>Broj pasa:</b> ${pasi.length}</p>
     </div>
 
     <div class="card">
       <h3>🐶 Psi u boksu</h3>
-
-      ${pasi.map(p => `
-        <button onclick="selectDog('${p.id}')"
-          style="display:block;width:100%;margin:5px 0;padding:8px">
-          ${p.ime}
+      ${pasi.map(d => `
+        <button onclick="selectDog('${d.id}')" style="width:100%;margin:5px 0">
+          ${d.ime}
         </button>
       `).join("")}
     </div>
 
-    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa u boksu</div>"}
+    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
 
     <div class="card">
       <h3>🚿 Pranje boksa</h3>
-
       ${
-        lastPranje
-          ? `
-            <p><b>Poslednje:</b> ${format(lastPranje.datum)}</p>
-
-            <button onclick="toggle('washHist')">Istorija</button>
-
-            <div id="washHist" style="display:none">
-              ${pranja.map(x => `
-                <p>${format(x.datum)} - ${x.oprao || "-"}</p>
-              `).join("")}
-            </div>
-          `
-          : "<p>Nema unosa</p>"
+        pranja.length
+          ? `<p><b>Poslednje:</b> ${fmt(pranja.at(-1).datum)} - ${pranja.at(-1).oprao || "-"}</p>`
+          : "<p>-</p>"
       }
     </div>
   `;
 
-  if(ACTIVE_DOG){
-    setTimeout(drawChart, 300);
-  }
+  setTimeout(drawChart, 200);
 }
 
 // ===================== DOG =====================
 
-function renderDog(d){
+function renderDog(d) {
 
-  const tezine = d.tezine || [];
-
-  const lastWeight =
-    tezine.length ? tezine[tezine.length - 1] : null;
+  const t = d.tezine || [];
 
   return `
-
     <div class="card">
       <h2>🐶 ${d.ime}</h2>
-      <p><b>Pol:</b> ${d.pol || "-"}</p>
-      <p><b>Rođenje:</b> ${d.rodjenje || "-"}</p>
-      <p><b>Rodovnik:</b> ${d.rodovnik || "-"}</p>
+      <p>Pol: ${d.pol || "-"}</p>
+      <p>Rođenje: ${d.rodjenje || "-"}</p>
+      <p>Rodovnik: ${d.rodovnik || "-"}</p>
     </div>
 
     <div class="card">
-      <h3>⚖️ Težina i ishrana</h3>
-
-      <p>
-        <b>Poslednja težina:</b>
-        ${lastWeight ? lastWeight.tezina + " kg" : "-"}
-      </p>
-
-      <p>
-        <b>Preporuka hrane:</b>
-        ${lastWeight ? lastWeight.hrana : "-"} g
-      </p>
-
+      <h3>⚖️ Težina</h3>
+      <p><b>Poslednja:</b> ${t.length ? t.at(-1).tezina + " kg" : "-"}</p>
+      <p><b>Hrana:</b> ${t.length ? t.at(-1).hrana + " g" : "-"}</p>
       <canvas id="chart"></canvas>
     </div>
 
-    ${renderHealth("🐾 Krpelji", d.krpelji, "krpelji")}
-    ${renderHealth("🪱 Paraziti", d.paraziti, "paraziti")}
-    ${renderHealth("💉 Besnilo", d.besnilo, "besnilo")}
-    ${renderHealth("⚙️ Ostalo", d.ostalo, "ostalo")}
+    ${healthBlock("Krpelji", d.krpelji, "krpelji")}
+    ${healthBlock("Paraziti", d.paraziti, "paraziti")}
+    ${healthBlock("Besnilo", d.besnilo, "besnilo")}
+    ${healthBlock("Ostalo", d.ostalo, "ostalo")}
 
     <div class="card">
       <h3>⚙️ Akcije</h3>
-
-      <button onclick="save('pranje')">Pranje boksa</button>
       <button onclick="save('tezina')">Težina</button>
       <button onclick="save('krpelji')">Krpelji</button>
       <button onclick="save('paraziti')">Paraziti</button>
@@ -161,24 +131,23 @@ function renderDog(d){
 
 // ===================== HEALTH =====================
 
-function renderHealth(title,data,key){
-
-  if(!data) return "";
+function healthBlock(title, d, key) {
+  if (!d) return "";
 
   return `
     <div class="card">
       <h3>${title}</h3>
 
-      <p><b>Poslednje:</b> ${format(data.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${data.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${format(data.nextDate)}</p>
+      <p><b>Poslednje:</b> ${fmt(d.lastDate)}</p>
+      <p><b>Sredstvo:</b> ${d.lastValue || "-"}</p>
+      <p><b>Sledeće:</b> ${fmt(d.nextDate)}</p>
 
       <button onclick="toggle('${key}')">Istorija</button>
 
       <div id="${key}" style="display:none">
-        ${(data.history || []).map(x => `
-          <p>${format(x.datum)} - ${x.value} → ${format(x.next)}</p>
-        `).join("")}
+        ${(d.history || []).map(x =>
+          `<p>${fmt(x.datum)} - ${x.value} → ${fmt(x.next)}</p>`
+        ).join("")}
       </div>
     </div>
   `;
@@ -186,31 +155,27 @@ function renderHealth(title,data,key){
 
 // ===================== SELECT DOG =====================
 
-function selectDog(id){
-  ACTIVE_DOG = (DATA.pasi || []).find(x => x.id === id);
+function selectDog(id) {
+  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
   render();
-  setTimeout(drawChart, 300);
+  setTimeout(drawChart, 200);
 }
 
 // ===================== CHART =====================
 
-function drawChart(){
-
+function drawChart() {
   const el = document.getElementById("chart");
-  if(!el) return;
+  if (!el || !ACTIVE_DOG?.tezine?.length) return;
 
-  const t = ACTIVE_DOG && ACTIVE_DOG.tezine ? ACTIVE_DOG.tezine : [];
-  if(!t.length) return;
-
-  new Chart(el,{
-    type:"line",
-    data:{
-      labels: t.map(x => format(x.datum)),
-      datasets:[{
-        label:"Težina (kg)",
-        data: t.map(x => Number(x.tezina)),
-        borderColor:"#111",
-        tension:0.3
+  new Chart(el, {
+    type: "line",
+    data: {
+      labels: ACTIVE_DOG.tezine.map(x => fmt(x.datum)),
+      datasets: [{
+        label: "Težina",
+        data: ACTIVE_DOG.tezine.map(x => Number(x.tezina)),
+        borderColor: "#111",
+        tension: 0.3
       }]
     }
   });
@@ -218,15 +183,13 @@ function drawChart(){
 
 // ===================== PIN =====================
 
-function verifyPIN(){
+function verifyPIN() {
+  if (AUTHORIZED) return true;
 
-  if(AUTHORIZED) return true;
+  const pin = prompt("PIN:");
 
-  const pin = prompt("Unesite PIN:");
-
-  if(pin === ADMIN_PIN){
+  if (pin === ADMIN_PIN) {
     AUTHORIZED = true;
-    alert("Pristup odobren");
     return true;
   }
 
@@ -236,79 +199,38 @@ function verifyPIN(){
 
 // ===================== SAVE =====================
 
-function save(type){
+function save(type) {
 
-  if(!verifyPIN()) return;
+  if (!verifyPIN()) return;
 
-  if(type === "tezina"){
-
-    const tezina = prompt("Izmerena težina (kg):");
-    if(!tezina) return;
-
-    const hrana = prompt("Preporuka hrane (g):");
-
-    fetch(API,{
-      method:"POST",
-      body:JSON.stringify({
-        type:"tezina",
-        pasId:ACTIVE_DOG.id,
-        value:tezina,
-        hrana:hrana || ""
-      })
-    }).then(()=>load());
-
-    return;
-  }
-
-  if(type === "pranje"){
-
-    const oprao = prompt("Ko je oprao boks?");
-    if(!oprao) return;
-
-    const note = prompt("Napomena:");
-
-    fetch(API,{
-      method:"POST",
-      body:JSON.stringify({
-        type:"pranje",
-        prostorId:PROSTOR_ID,
-        value:oprao,
-        note:note || ""
-      })
-    }).then(()=>load());
-
-    return;
-  }
-
-  const value = prompt("Unesi sredstvo:");
-  if(!value) return;
+  const value = prompt("Sredstvo / vrednost:");
+  if (!value) return;
 
   const next = prompt("Sledeći datum (YYYY-MM-DD):");
-  const note = prompt("Napomena:");
 
-  fetch(API,{
-    method:"POST",
-    body:JSON.stringify({
+  fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
       type,
-      pasId:ACTIVE_DOG.id,
+      prostorId: PROSTOR_ID,
+      pasId: ACTIVE_DOG?.id,
       value,
-      next,
-      note
+      next
     })
-  }).then(()=>load());
+  }).then(() => load());
 }
 
 // ===================== TOGGLE =====================
 
-function toggle(id){
+function toggle(id) {
   const el = document.getElementById(id);
-  if(!el) return;
+  if (!el) return;
   el.style.display = el.style.display === "none" ? "block" : "none";
 }
 
-// ===================== FORMAT =====================
+// ===================== HELP =====================
 
-function format(d){
-  if(!d) return "-";
+function fmt(d) {
+  if (!d) return "-";
   return new Date(d).toLocaleDateString();
 }
