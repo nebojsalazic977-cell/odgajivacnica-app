@@ -7,8 +7,7 @@ const PROSTOR_ID =
   params.get("prostor") ||
   params.get("id");
 
-const API =
-"https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
+const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
 let DATA = null;
 let ACTIVE_DOG = null;
@@ -16,10 +15,9 @@ let ACTIVE_DOG = null;
 // ================= INIT =================
 
 window.onload = () => {
-  const app = document.getElementById("app");
 
   if (!PROSTOR_ID) {
-    app.innerHTML = "❌ Missing prostor ID";
+    document.getElementById("app").innerHTML = "Missing prostor ID";
     return;
   }
 
@@ -33,13 +31,11 @@ function load() {
   const app = document.getElementById("app");
   app.innerHTML = "Loading...";
 
-  const url = `${API}?action=getBox&prostorId=${encodeURIComponent(PROSTOR_ID)}`;
-
-  fetch(url)
+  fetch(`${API}?action=getBox&prostorId=${PROSTOR_ID}`)
     .then(r => r.json())
     .then(data => {
 
-      if (!data || !data.success) {
+      if (!data.success) {
         console.error(data);
         app.innerHTML = "API ERROR";
         return;
@@ -62,56 +58,34 @@ function render() {
 
   const app = document.getElementById("app");
 
-  const p = DATA?.prostor || {};
-  const pasi = DATA?.pasi || [];
-  const pranja = DATA?.pranja || [];
-
-  const lastWash = pranja.length ? pranja[pranja.length - 1] : null;
+  const p = DATA.prostor || {};
+  const pasi = DATA.pasi || [];
 
   app.innerHTML = `
-    
-    <!-- BOX INFO + PRANJE -->
     <div class="card">
       <h2>📦 ${p.oznaka || "-"}</h2>
-
-      <p><b>Status:</b> ${p.status || "-"}</p>
-      <p><b>Površina:</b> ${p.povrsina || "-"}</p>
-      <p><b>Broj pasa:</b> ${pasi.length}</p>
-
-      <hr>
-
-      <h3>🚿 Pranje boksa</h3>
-      <p><b>Poslednje:</b> ${lastWash ? format(lastWash.datum) : "-"}</p>
-      <p><b>Oprao:</b> ${lastWash?.oprao || "-"}</p>
-
-      <button onclick="toggleWash()">Istorija pranja</button>
-
-      <div id="washBox" style="display:none">
-        ${pranja.map(p => `
-          <p>${format(p.datum)} → ${p.oprao || "-"}</p>
-        `).join("")}
-      </div>
+      <p>Status: ${p.status || "-"}</p>
+      <p>Površina: ${p.povrsina || "-"}</p>
+      <p>Broj pasa: ${pasi.length}</p>
     </div>
 
-    <!-- PSI -->
     <div class="card">
-      <h3>🐶 Psi u boksu</h3>
+      <h3>🐶 Psi</h3>
       ${pasi.map(d => `
-        <button onclick="selectDog('${d.id}')">
-          ${d.ime}
-        </button>
+        <button onclick="selectDog('${d.id}')">${d.ime}</button>
       `).join("")}
     </div>
 
-    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
+    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : ""}
   `;
 }
+
 // ================= DOG =================
 
 function renderDog(d) {
 
-  const lastWeight = d.tezine?.at(-1);
-  const lastFood = d.ishrana?.at(-1);
+  const lastW = d.tezine?.at(-1);
+  const lastF = d.ishrana?.at(-1);
 
   return `
     <div class="card">
@@ -123,23 +97,28 @@ function renderDog(d) {
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p><b>${lastWeight?.value || "-"} kg</b></p>
+      <p><b>${lastW?.value || "-"} kg</b></p>
+
+      <h4>Istorija</h4>
+      ${(d.tezine || []).map(t => `
+        <p>${format(t.datum)} → ${t.value} kg</p>
+      `).join("")}
     </div>
 
     <div class="card">
       <h3>🍖 Ishrana</h3>
-      <p><b>${lastFood?.value || "-"} g</b></p>
+      <p><b>${lastF?.value || "-"} g</b></p>
 
-      <h4>Istorija ishrane</h4>
+      <h4>Istorija</h4>
       ${(d.ishrana || []).map(i => `
         <p>${format(i.datum)} → ${i.value} g</p>
       `).join("")}
     </div>
 
-    ${renderHealth("🐾 Krpelji", d.krpelji)}
-    ${renderHealth("🪱 Paraziti", d.paraziti)}
-    ${renderHealth("💉 Besnilo", d.besnilo)}
-    ${renderHealth("⚙️ Ostalo", d.ostalo)}
+    ${renderHealth("Krpelji", d.krpelji)}
+    ${renderHealth("Paraziti", d.paraziti)}
+    ${renderHealth("Besnilo", d.besnilo)}
+    ${renderHealth("Ostalo", d.ostalo)}
 
     <div class="card">
       <button onclick="save('tezina')">Težina</button>
@@ -161,19 +140,14 @@ function renderHealth(title, data) {
   return `
     <div class="card">
       <h3>${title}</h3>
-      <p><b>Poslednje:</b> ${format(data.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${data.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${format(data.nextDate)}</p>
-
-      <h4>Istorija</h4>
-      ${(data.history || []).map(h =>
-        `<p>${format(h.datum)} → ${h.value}</p>`
-      ).join("")}
+      <p>Poslednje: ${format(data.lastDate)}</p>
+      <p>Sredstvo: ${data.lastValue || "-"}</p>
+      <p>Sledeće: ${format(data.nextDate)}</p>
     </div>
   `;
 }
 
-// ================= SELECT =================
+// ================= SAVE =================
 
 function save(type) {
 
@@ -190,9 +164,7 @@ function save(type) {
 
   fetch(API, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       type,
       pasId: ACTIVE_DOG.id,
@@ -200,24 +172,19 @@ function save(type) {
       next
     })
   })
-  .then(r => r.json())
-  .then(res => {
-    console.log(res);
-    load();
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Greška pri unosu");
-  });
+  .then(() => load());
 }
+
 // ================= HELPERS =================
 
 function format(d) {
   if (!d) return "-";
   return new Date(d).toLocaleDateString();
 }
-function toggleWash() {
-  const el = document.getElementById("washBox");
-  if (!el) return;
-  el.style.display = el.style.display === "none" ? "block" : "none";
+
+// ================= SELECT =================
+
+function selectDog(id) {
+  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
+  render();
 }
