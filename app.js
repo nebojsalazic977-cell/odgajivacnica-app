@@ -186,27 +186,66 @@ function drawChart(){
 
 function save(type){
 
-  if(!AUTH){
-    alert("Nemaš dozvolu za unos");
-    requestPIN();
-    if(!AUTH) return;
+  // TEŽINA
+  if(type === "tezina"){
+
+    const tezina = prompt("Izmerena težina (kg):");
+
+    if(!tezina) return;
+
+    const hrana = prompt("Preporuka hrane (g):");
+
+    fetch(API,{
+      method:"POST",
+      body:JSON.stringify({
+        type:"tezina",
+        pasId:ACTIVE_DOG.id,
+        value:tezina,
+        hrana:hrana || ""
+      })
+    }).then(()=>load());
+
+    return;
   }
 
-  const value = prompt("Unos sredstva:");
+  // PRANJE
+  if(type === "pranje"){
+
+    const oprao = prompt("Ko je oprao boks?");
+
+    if(!oprao) return;
+
+    const note = prompt("Napomena:");
+
+    fetch(API,{
+      method:"POST",
+      body:JSON.stringify({
+        type:"pranje",
+        prostorId:PROSTOR_ID,
+        value:oprao,
+        note:note || ""
+      })
+    }).then(()=>load());
+
+    return;
+  }
+
+  // KRPELJI / PARAZITI / BESNILO
+  const value = prompt("Unesi sredstvo:");
+
   if(!value) return;
 
-  const next = prompt("Sledeći datum (YYYY-MM-DD):");
+  const next = prompt("Sledeći datum tretmana (YYYY-MM-DD):");
 
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
+  fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
       type,
-      prostorId: PROSTOR_ID,
-      pasId: ACTIVE_DOG?.id,
+      pasId:ACTIVE_DOG.id,
       value,
       next
     })
-  }).then(() => load());
+  }).then(()=>load());
 }
 
 // ===================== TOGGLE =====================
