@@ -1,15 +1,12 @@
-const ADMIN_PIN = "1234";
-let AUTH = false;
+const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
 const PROSTOR_ID = new URLSearchParams(location.search).get("prostor");
-
-const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_n9KY5es-XirSXzu5WGddOvZoBPfJV2GfJiyRRiQ_/exec";
 
 let DATA = null;
 let ACTIVE = null;
 
 window.onload = () => {
-  if (!PROSTOR_ID) return show("Missing QR ID");
+  if (!PROSTOR_ID) return show("Missing QR");
   load();
 };
 
@@ -32,6 +29,7 @@ function load() {
 
       DATA = d;
       ACTIVE = d.pasi?.[0] || null;
+
       render();
     })
     .catch(e => {
@@ -42,14 +40,14 @@ function load() {
 
 function render() {
 
-  const p = DATA.prostor || {};
-  const psi = DATA.pasi || [];
+  const p = DATA.prostor;
+  const psi = DATA.pasi;
 
   document.getElementById("app").innerHTML = `
     <div class="card">
-      <h2>${p.oznaka || "-"}</h2>
-      <p>${p.status || "-"}</p>
-      <p>${p.povrsina || "-"}</p>
+      <h2>${p?.oznaka || "-"}</h2>
+      <p>${p?.status || "-"}</p>
+      <p>${p?.povrsina || "-"}</p>
       <p>Pasa: ${psi.length}</p>
     </div>
 
@@ -67,7 +65,6 @@ function dog(d) {
     <div class="card">
       <h2>${d.ime}</h2>
       <p>${d.pol}</p>
-      <p>${d.rodjenje}</p>
     </div>
 
     <div class="card">
@@ -80,18 +77,11 @@ function dog(d) {
       ${(d.ishrana || []).map(i => `<p>${i.datum} → ${i.value}</p>`).join("")}
     </div>
 
-    ${health("Krpelji", d.krpelji)}
-    ${health("Paraziti", d.paraziti)}
-    ${health("Besnilo", d.besnilo)}
-  `;
-}
-
-function health(t, d) {
-  if (!d) return "";
-  return `
     <div class="card">
-      <h3>${t}</h3>
-      <p>${d.lastValue || "-"}</p>
+      <h3>Zdravlje</h3>
+      <p>Krpelji: ${d.krpelji?.lastValue || "-"}</p>
+      <p>Paraziti: ${d.paraziti?.lastValue || "-"}</p>
+      <p>Besnilo: ${d.besnilo?.lastValue || "-"}</p>
     </div>
   `;
 }
@@ -99,24 +89,4 @@ function health(t, d) {
 function select(id) {
   ACTIVE = DATA.pasi.find(x => x.id === id);
   render();
-}
-
-function save(type) {
-
-  if (!AUTH) {
-    if (prompt("PIN?") !== ADMIN_PIN) return;
-    AUTH = true;
-  }
-
-  const value = prompt("Unos:");
-  if (!value) return;
-
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      type,
-      pasId: ACTIVE.id,
-      value
-    })
-  }).then(() => load());
 }
