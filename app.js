@@ -110,8 +110,8 @@ function render() {
 
 function renderDog(d) {
 
-  const tezine = d?.tezine || [];
-  const last = tezine.length ? tezine[tezine.length - 1] : null;
+  const lastWeight = d.tezine?.at(-1);
+  const lastFood = d.ishrana?.at(-1);
 
   return `
     <div class="card">
@@ -123,12 +123,16 @@ function renderDog(d) {
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p><b>${last?.tezina ?? "-"} kg</b></p>
-      <p><b>Hrana:</b> ${last?.hrana ?? "-"} g</p>
+      <p><b>${lastWeight?.value || "-"} kg</b></p>
+    </div>
 
-      <h4>Istorija težine</h4>
-      ${tezine.map(t => `
-        <p>${format(t.datum)} → ${t.tezina} kg / ${t.hrana || 0} g</p>
+    <div class="card">
+      <h3>🍖 Ishrana</h3>
+      <p><b>${lastFood?.value || "-"} g</b></p>
+
+      <h4>Istorija ishrane</h4>
+      ${(d.ishrana || []).map(i => `
+        <p>${format(i.datum)} → ${i.value} g</p>
       `).join("")}
     </div>
 
@@ -139,6 +143,7 @@ function renderDog(d) {
 
     <div class="card">
       <button onclick="save('tezina')">Težina</button>
+      <button onclick="save('ishrana')">Ishrana</button>
       <button onclick="save('krpelji')">Krpelji</button>
       <button onclick="save('paraziti')">Paraziti</button>
       <button onclick="save('besnilo')">Besnilo</button>
