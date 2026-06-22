@@ -12,17 +12,24 @@ let ACTIVE_DOG = null;
 
 window.onload = load;
 
-function load(){
+function load() {
 
   const app = document.getElementById("app");
+
+  if (!PROSTOR_ID) {
+    app.innerHTML = "MISSING PROSTOR_ID";
+    return;
+  }
+
   app.innerHTML = "Loading...";
 
   fetch(API + "?action=getBox&prostorId=" + PROSTOR_ID)
     .then(r => r.json())
     .then(data => {
 
-      if(!data || !data.success){
+      if (!data || !data.success) {
         app.innerHTML = "API ERROR";
+        console.error(data);
         return;
       }
 
@@ -33,33 +40,32 @@ function load(){
     })
     .catch(err => {
       console.error(err);
-      document.getElementById("app").innerHTML = "NETWORK ERROR";
+      app.innerHTML = "NETWORK ERROR";
     });
 }
 
 // ================= RENDER =================
 
-function render(){
+function render() {
 
   const app = document.getElementById("app");
 
   const p = DATA.prostor;
   const pasi = DATA.pasi || [];
-  const pranja = DATA.pranja || [];
 
   app.innerHTML = `
     <div class="card">
       <h2>📦 ${p.oznaka}</h2>
       <p>Status: ${p.status}</p>
       <p>Površina: ${p.povrsina}</p>
-      <p>Psi: ${pasi.length}</p>
+      <p>Broj pasa: ${pasi.length}</p>
     </div>
 
     <div class="card">
       <h3>🐶 Psi</h3>
-      ${pasi.map(x => `
-        <button onclick="selectDog('${x.id}')">
-          ${x.ime}
+      ${pasi.map(d => `
+        <button onclick="selectDog('${d.id}')">
+          ${d.ime}
         </button>
       `).join("")}
     </div>
@@ -70,79 +76,64 @@ function render(){
 
 // ================= DOG =================
 
-function renderDog(d){
+function renderDog(d) {
 
-  const lastWeight = d.tezine?.at(-1);
-  const lastFood = d.ishrana?.at(-1);
+  const last = d.tezine?.at(-1);
 
   return `
     <div class="card">
       <h2>${d.ime}</h2>
       <p>Rođenje: ${d.rodjenje}</p>
+      <p>Rodovnik: ${d.rodovnik}</p>
     </div>
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p>${lastWeight ? lastWeight.tezina + " kg" : "-"}</p>
-    </div>
-
-    <div class="card">
-      <h3>🍗 Ishrana</h3>
-      <p>${lastFood ? lastFood.hrana + " g" : "-"}</p>
+      <p>${last ? last.tezina + " kg" : "-"}</p>
+      <p>Hrana: ${last?.hrana || "-"} g</p>
     </div>
 
     <div class="card">
       <button onclick="save('tezina')">Težina</button>
-      <button onclick="save('ishrana')">Ishrana</button>
       <button onclick="save('krpelji')">Krpelji</button>
       <button onclick="save('paraziti')">Paraziti</button>
       <button onclick="save('besnilo')">Besnilo</button>
+      <button onclick="save('ostalo')">Ostalo</button>
     </div>
   `;
 }
 
 // ================= SAVE =================
 
-function save(type){
+function save(type) {
 
-  if(!verifyPIN()) return;
+  if (!verifyPIN()) return;
 
-  if(type === "tezina"){
+  const value = prompt("Unos:");
+  if (!value) return;
 
-    const v = prompt("Težina (kg):");
-    if(!v) return;
+  const next = prompt("Sledeći datum (YYYY-MM-DD):");
 
-    fetch(API,{
-      method:"POST",
-      body:JSON.stringify({type:"tezina", pasId:ACTIVE_DOG.id, value:v})
-    }).then(load);
-
-    return;
-  }
-
-  if(type === "ishrana"){
-
-    const v = prompt("Hrana (g):");
-    if(!v) return;
-
-    fetch(API,{
-      method:"POST",
-      body:JSON.stringify({type:"ishrana", pasId:ACTIVE_DOG.id, value:v})
-    }).then(load);
-
-    return;
-  }
+  fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
+      type,
+      pasId: ACTIVE_DOG.id,
+      value,
+      next
+    })
+  }).then(() => load());
 }
 
 // ================= PIN =================
 
-function verifyPIN(){
+function verifyPIN() {
 
-  if(AUTHORIZED) return true;
+  if (AUTHORIZED) return true;
 
   const pin = prompt("PIN:");
 
-  if(pin === ADMIN_PIN){
+  if (pin === ADMIN_PIN) {
     AUTHORIZED = true;
     return true;
   }
@@ -153,7 +144,7 @@ function verifyPIN(){
 
 // ================= SELECT =================
 
-function selectDog(id){
+function selectDog(id) {
   ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
   render();
 }
