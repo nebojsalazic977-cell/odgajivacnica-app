@@ -32,14 +32,35 @@ window.onload = () => {
 function load() {
 
   const app = document.getElementById("app");
+
+  if (!PROSTOR_ID) {
+    app.innerHTML = "❌ QR nema prostor ID";
+    console.log("URL:", window.location.href);
+    return;
+  }
+
+  const url = `${API}?action=getBox&prostorId=${encodeURIComponent(PROSTOR_ID)}`;
+
+  console.log("FETCH URL:", url);
+
   app.innerHTML = "Loading...";
 
-  fetch(API + "?action=getBox&prostorId=" + PROSTOR_ID)
-    .then(r => r.json())
+  fetch(url, {
+    method: "GET",
+    cache: "no-cache"
+  })
+    .then(async r => {
+
+      const text = await r.text();
+      console.log("RAW RESPONSE:", text);
+
+      return JSON.parse(text);
+    })
     .then(data => {
 
+      console.log("DATA:", data);
+
       if (!data || !data.success) {
-        console.error(data);
         app.innerHTML = "API ERROR";
         return;
       }
@@ -50,11 +71,10 @@ function load() {
       render();
     })
     .catch(err => {
-      console.error(err);
-      app.innerHTML = "NETWORK ERROR";
+      console.error("FETCH FAILED:", err);
+      app.innerHTML = "NETWORK ERROR (see console)";
     });
 }
-
 // ================= RENDER =================
 
 function render() {
