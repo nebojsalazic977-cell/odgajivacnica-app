@@ -170,51 +170,25 @@ function renderHealth(title, data) {
 
 // ================= SELECT =================
 
-function selectDog(id) {
-  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
-  render();
-}
-
-// ================= SAVE =================
 function save(type) {
 
   if (!AUTHORIZED) {
     const pin = prompt("PIN?");
-    if (pin !== ADMIN_PIN) {
-      alert("Wrong PIN");
-      return;
-    }
+    if (pin !== ADMIN_PIN) return;
     AUTHORIZED = true;
   }
 
+  const value = prompt("Unos:");
+  if (!value) return;
+
+  const next = prompt("Sledeći datum (ako treba):");
+
   let payload = {
     type,
-    pasId: ACTIVE_DOG.id
+    pasId: ACTIVE_DOG.id,
+    value,
+    next
   };
-
-  // TEŽINA
-  if (type === "tezina") {
-
-    const value = prompt("Težina (kg):");
-    if (!value) return;
-
-    const hrana = prompt("Hrana (g):");
-
-    payload.value = value;
-    payload.hrana = hrana || 0;
-  }
-
-  // HEALTH
-  else {
-
-    const value = prompt("Sredstvo:");
-    if (!value) return;
-
-    const next = prompt("Sledeći datum:");
-
-    payload.value = value;
-    payload.next = next;
-  }
 
   fetch(API, {
     method: "POST",
@@ -225,11 +199,11 @@ function save(type) {
   })
   .then(r => r.json())
   .then(res => {
-    console.log("SAVE RESPONSE:", res);
+    console.log("SAVE OK:", res);
     load();
   })
   .catch(err => {
-    console.error("SAVE ERROR:", err);
+    console.error(err);
     alert("Greška pri unosu");
   });
 }
