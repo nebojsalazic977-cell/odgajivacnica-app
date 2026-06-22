@@ -188,23 +188,21 @@ function save(type) {
 
   const next = prompt("Sledeći datum (ako treba):");
 
-  let payload = {
-    type,
-    pasId: ACTIVE_DOG.id,
-    value,
-    next
-  };
-
   fetch(API, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      type,
+      pasId: ACTIVE_DOG.id,
+      value,
+      next
+    })
   })
   .then(r => r.json())
   .then(res => {
-    console.log("SAVE OK:", res);
+    console.log(res);
     load();
   })
   .catch(err => {
