@@ -148,7 +148,6 @@ function renderHealth(title, data) {
 }
 
 // ================= SAVE =================
-
 function save(type) {
 
   if (!AUTHORIZED) {
@@ -160,19 +159,45 @@ function save(type) {
   const value = prompt("Unos:");
   if (!value) return;
 
-  const next = prompt("Sledeći datum (ako treba):");
+  const next = prompt("Sledeći datum (opciono)");
+
+  const payload = {
+    type,
+    pasId: ACTIVE_DOG.id,
+    value,
+    next
+  };
+
+  console.log("SENDING:", payload);
 
   fetch(API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type,
-      pasId: ACTIVE_DOG.id,
-      value,
-      next
-    })
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
   })
-  .then(() => load());
+  .then(async r => {
+    const text = await r.text();
+    console.log("RAW RESPONSE:", text);
+
+    return JSON.parse(text);
+  })
+  .then(res => {
+
+    console.log("SERVER:", res);
+
+    if (!res.success) {
+      alert("SERVER ERROR: " + res.message);
+      return;
+    }
+
+    load();
+  })
+  .catch(err => {
+    console.error("POST ERROR:", err);
+    alert("Greška pri unosu");
+  });
 }
 
 // ================= HELPERS =================
