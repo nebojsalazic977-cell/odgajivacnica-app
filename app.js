@@ -8,19 +8,12 @@ const API = "https://script.google.com/macros/s/AKfycbxjRNExBlTo99eYDD8LQjw2DGX_
 let DATA = null;
 let ACTIVE_DOG = null;
 
-// ===================== INIT =====================
+// ================= LOAD =================
 
-window.onload = () => {
-  if (!PROSTOR_ID) {
-    document.getElementById("app").innerHTML = "MISSING PROSTOR ID";
-    return;
-  }
-  load();
-};
+window.onload = load;
 
-// ===================== LOAD =====================
+function load(){
 
-function load() {
   const app = document.getElementById("app");
   app.innerHTML = "Loading...";
 
@@ -28,20 +21,13 @@ function load() {
     .then(r => r.json())
     .then(data => {
 
-      console.log("API DATA:", data);
-
-      if (!data || !data.success) {
+      if(!data || !data.success){
         app.innerHTML = "API ERROR";
         return;
       }
 
       DATA = data;
-
-      if (!ACTIVE_DOG) {
-        ACTIVE_DOG = data.pasi?.[0] || null;
-      } else {
-        ACTIVE_DOG = data.pasi?.find(x => x.id === ACTIVE_DOG.id) || data.pasi?.[0] || null;
-      }
+      ACTIVE_DOG = data.pasi?.[0] || null;
 
       render();
     })
@@ -51,144 +37,112 @@ function load() {
     });
 }
 
-// ===================== RENDER BOX =====================
+// ================= RENDER =================
 
-function render() {
+function render(){
+
   const app = document.getElementById("app");
 
-  const p = DATA?.prostor || {};
-  const pasi = DATA?.pasi || [];
-  const pranja = DATA?.pranja || [];
+  const p = DATA.prostor;
+  const pasi = DATA.pasi || [];
+  const pranja = DATA.pranja || [];
 
   app.innerHTML = `
     <div class="card">
-      <h2>📦 ${p.oznaka || "-"}</h2>
-      <p>Status: ${p.status || "-"}</p>
-      <p>Površina: ${p.povrsina || "-"}</p>
-      <p><b>Broj pasa:</b> ${pasi.length}</p>
+      <h2>📦 ${p.oznaka}</h2>
+      <p>Status: ${p.status}</p>
+      <p>Površina: ${p.povrsina}</p>
+      <p>Psi: ${pasi.length}</p>
     </div>
 
     <div class="card">
-      <h3>🐶 Psi u boksu</h3>
-      ${pasi.map(d => `
-        <button onclick="selectDog('${d.id}')" style="width:100%;margin:5px 0">
-          ${d.ime}
+      <h3>🐶 Psi</h3>
+      ${pasi.map(x => `
+        <button onclick="selectDog('${x.id}')">
+          ${x.ime}
         </button>
       `).join("")}
     </div>
 
-    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
-
-    <div class="card">
-      <h3>🚿 Pranje boksa</h3>
-      ${
-        pranja.length
-          ? `<p><b>Poslednje:</b> ${fmt(pranja.at(-1).datum)} - ${pranja.at(-1).oprao || "-"}</p>`
-          : "<p>-</p>"
-      }
-    </div>
+    ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : ""}
   `;
-
-  setTimeout(drawChart, 200);
 }
 
-// ===================== DOG =====================
+// ================= DOG =================
 
-function renderDog(d) {
+function renderDog(d){
 
-  const t = d.tezine || [];
+  const lastWeight = d.tezine?.at(-1);
+  const lastFood = d.ishrana?.at(-1);
 
   return `
     <div class="card">
-      <h2>🐶 ${d.ime}</h2>
-      <p>Pol: ${d.pol || "-"}</p>
-      <p>Rođenje: ${d.rodjenje || "-"}</p>
-      <p>Rodovnik: ${d.rodovnik || "-"}</p>
+      <h2>${d.ime}</h2>
+      <p>Rođenje: ${d.rodjenje}</p>
     </div>
 
     <div class="card">
       <h3>⚖️ Težina</h3>
-      <p><b>Poslednja:</b> ${t.length ? t.at(-1).tezina + " kg" : "-"}</p>
-      <p><b>Hrana:</b> ${t.length ? t.at(-1).hrana + " g" : "-"}</p>
-      <canvas id="chart"></canvas>
+      <p>${lastWeight ? lastWeight.tezina + " kg" : "-"}</p>
     </div>
 
-    ${healthBlock("Krpelji", d.krpelji, "krpelji")}
-    ${healthBlock("Paraziti", d.paraziti, "paraziti")}
-    ${healthBlock("Besnilo", d.besnilo, "besnilo")}
-    ${healthBlock("Ostalo", d.ostalo, "ostalo")}
+    <div class="card">
+      <h3>🍗 Ishrana</h3>
+      <p>${lastFood ? lastFood.hrana + " g" : "-"}</p>
+    </div>
 
     <div class="card">
-      <h3>⚙️ Akcije</h3>
       <button onclick="save('tezina')">Težina</button>
+      <button onclick="save('ishrana')">Ishrana</button>
       <button onclick="save('krpelji')">Krpelji</button>
       <button onclick="save('paraziti')">Paraziti</button>
       <button onclick="save('besnilo')">Besnilo</button>
-      <button onclick="save('ostalo')">Ostalo</button>
     </div>
   `;
 }
 
-// ===================== HEALTH =====================
+// ================= SAVE =================
 
-function healthBlock(title, d, key) {
-  if (!d) return "";
+function save(type){
 
-  return `
-    <div class="card">
-      <h3>${title}</h3>
+  if(!verifyPIN()) return;
 
-      <p><b>Poslednje:</b> ${fmt(d.lastDate)}</p>
-      <p><b>Sredstvo:</b> ${d.lastValue || "-"}</p>
-      <p><b>Sledeće:</b> ${fmt(d.nextDate)}</p>
+  if(type === "tezina"){
 
-      <button onclick="toggle('${key}')">Istorija</button>
+    const v = prompt("Težina (kg):");
+    if(!v) return;
 
-      <div id="${key}" style="display:none">
-        ${(d.history || []).map(x =>
-          `<p>${fmt(x.datum)} - ${x.value} → ${fmt(x.next)}</p>`
-        ).join("")}
-      </div>
-    </div>
-  `;
+    fetch(API,{
+      method:"POST",
+      body:JSON.stringify({type:"tezina", pasId:ACTIVE_DOG.id, value:v})
+    }).then(load);
+
+    return;
+  }
+
+  if(type === "ishrana"){
+
+    const v = prompt("Hrana (g):");
+    if(!v) return;
+
+    fetch(API,{
+      method:"POST",
+      body:JSON.stringify({type:"ishrana", pasId:ACTIVE_DOG.id, value:v})
+    }).then(load);
+
+    return;
+  }
 }
 
-// ===================== SELECT DOG =====================
+// ================= PIN =================
 
-function selectDog(id) {
-  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
-  render();
-  setTimeout(drawChart, 200);
-}
+function verifyPIN(){
 
-// ===================== CHART =====================
-
-function drawChart() {
-  const el = document.getElementById("chart");
-  if (!el || !ACTIVE_DOG?.tezine?.length) return;
-
-  new Chart(el, {
-    type: "line",
-    data: {
-      labels: ACTIVE_DOG.tezine.map(x => fmt(x.datum)),
-      datasets: [{
-        label: "Težina",
-        data: ACTIVE_DOG.tezine.map(x => Number(x.tezina)),
-        borderColor: "#111",
-        tension: 0.3
-      }]
-    }
-  });
-}
-
-// ===================== PIN =====================
-
-function verifyPIN() {
-  if (AUTHORIZED) return true;
+  if(AUTHORIZED) return true;
 
   const pin = prompt("PIN:");
 
-  if (pin === ADMIN_PIN) {
+  if(pin === ADMIN_PIN){
     AUTHORIZED = true;
     return true;
   }
@@ -197,40 +151,9 @@ function verifyPIN() {
   return false;
 }
 
-// ===================== SAVE =====================
+// ================= SELECT =================
 
-function save(type) {
-
-  if (!verifyPIN()) return;
-
-  const value = prompt("Sredstvo / vrednost:");
-  if (!value) return;
-
-  const next = prompt("Sledeći datum (YYYY-MM-DD):");
-
-  fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      type,
-      prostorId: PROSTOR_ID,
-      pasId: ACTIVE_DOG?.id,
-      value,
-      next
-    })
-  }).then(() => load());
-}
-
-// ===================== TOGGLE =====================
-
-function toggle(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.style.display = el.style.display === "none" ? "block" : "none";
-}
-
-// ===================== HELP =====================
-
-function fmt(d) {
-  if (!d) return "-";
-  return new Date(d).toLocaleDateString();
+function selectDog(id){
+  ACTIVE_DOG = DATA.pasi.find(x => x.id === id);
+  render();
 }
