@@ -64,15 +64,36 @@ function render() {
 
   const p = DATA?.prostor || {};
   const pasi = DATA?.pasi || [];
+  const pranja = DATA?.pranja || [];
+
+  const lastWash = pranja.length ? pranja[pranja.length - 1] : null;
 
   app.innerHTML = `
+    
+    <!-- BOX INFO + PRANJE -->
     <div class="card">
       <h2>📦 ${p.oznaka || "-"}</h2>
-      <p>Status: ${p.status || "-"}</p>
-      <p>Površina: ${p.povrsina || "-"}</p>
+
+      <p><b>Status:</b> ${p.status || "-"}</p>
+      <p><b>Površina:</b> ${p.povrsina || "-"}</p>
       <p><b>Broj pasa:</b> ${pasi.length}</p>
+
+      <hr>
+
+      <h3>🚿 Pranje boksa</h3>
+      <p><b>Poslednje:</b> ${lastWash ? format(lastWash.datum) : "-"}</p>
+      <p><b>Oprao:</b> ${lastWash?.oprao || "-"}</p>
+
+      <button onclick="toggleWash()">Istorija pranja</button>
+
+      <div id="washBox" style="display:none">
+        ${pranja.map(p => `
+          <p>${format(p.datum)} → ${p.oprao || "-"}</p>
+        `).join("")}
+      </div>
     </div>
 
+    <!-- PSI -->
     <div class="card">
       <h3>🐶 Psi u boksu</h3>
       ${pasi.map(d => `
@@ -85,7 +106,6 @@ function render() {
     ${ACTIVE_DOG ? renderDog(ACTIVE_DOG) : "<div class='card'>Nema pasa</div>"}
   `;
 }
-
 // ================= DOG =================
 
 function renderDog(d) {
@@ -213,4 +233,9 @@ function save(type) {
 function format(d) {
   if (!d) return "-";
   return new Date(d).toLocaleDateString();
+}
+function toggleWash() {
+  const el = document.getElementById("washBox");
+  if (!el) return;
+  el.style.display = el.style.display === "none" ? "block" : "none";
 }
